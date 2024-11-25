@@ -4,17 +4,18 @@
  *
  */
 
- @font-face {
-  font-display: swap;
-  font-family: 'Source Sans Pro', sans-serif;
-  font-style: normal;
-  font-weight: normal;
-}
+//  @font-face {
+//   font-display: swap;
+//   font-family: 'Source Sans Pro', sans-serif;
+//   font-style: normal;
+//   font-weight: normal;
+// }
 
 :root {
-  --spacing-m: 1rem;
-  --spacing-l: 1.5rem;
-  --spacing-xl: 2rem;
+  --spacing-s: 0.5rem; /* New small spacing */
+  --spacing-m: 0.75rem; /* Reduced */
+  --spacing-l: 1rem; /* Reduced */
+  --spacing-xl: 1.5rem; /* Reduced */
 
   --colour-background-now-playing: #301934;
   --color-text-primary: #fff;

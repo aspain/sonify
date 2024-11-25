@@ -2,23 +2,23 @@
  * Global: Typography.
  * -----------------------------------------------------------------------------
  */
-h1 {
-  font-size: 2em;
+ h1 {
+  font-size: 3vh; /* Increased for better visibility */
   font-weight: var(--font-weight-heading);
-  letter-spacing: -1.25px;
-  margin: 0 0 var(--spacing-m) 0;
+  letter-spacing: -0.75px; /* Adjusted for better readability */
+  margin: 0 0 1vh 0; /* Reduced margin */
   word-break: break-word;
 }
 
 h2 {
-  font-size: 1.5em;
+  font-size: 2.5vh; /* Adjusted for balance */
   font-weight: var(--font-weight-body);
-  letter-spacing: -0.5px;
+  letter-spacing: -0.25px; /* Adjusted */
   margin: 0;
   word-break: break-word;
 }
 
 p {
-  font-size: 1.2em;
-  line-height: 1.4;
+  font-size: 1.8vh; /* Increased slightly for visibility */
+  line-height: 1.2; /* Adjusted for tighter spacing */
 }
