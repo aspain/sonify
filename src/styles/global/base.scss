@@ -2,7 +2,7 @@
  * Global: Base Styles.
  * -----------------------------------------------------------------------------
  */
- html, body {
+html, body {
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
   font-family: var(--font-body);
@@ -15,16 +15,12 @@
   text-size-adjust: 100%;
   width: 100%;
   line-height: var(--body-line-height);
-  color: var(--color-text-primary); /* Set default text color */
-  background-color: var(--colour-background-now-playing); /* Set default background */
-  overflow: hidden; /* Prevent scroll bars from appearing */
 }
 
 #app {
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
-  /* Remove conflicting color and background-color */
-  /* color: #2c3e50; */
+  color: #2c3e50;
   height: 100vh;
   margin: 0;
   padding: 0;
