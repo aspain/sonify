@@ -37,10 +37,12 @@
 
   &__track {
     font-weight: var(--font-weight-heading);
+    font-size: 34px;
   }
 
   &__artists {
     opacity: 0.8;
+    font-size: 28px;
   }
 
   &--active {
