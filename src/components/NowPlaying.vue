@@ -1,6 +1,10 @@
 <template>
   <div id="app">
-    <div v-if="player.playing" class="now-playing" :class="getNowPlayingClass()">
+    <div
+      v-if="player.playing"
+      class="now-playing"
+      :class="getNowPlayingClass()"
+    >
       <div class="now-playing__cover">
         <img
           :src="player.trackAlbum.image"
@@ -12,15 +16,11 @@
         <h1 class="now-playing__track" v-text="player.trackTitle"></h1>
         <h2 class="now-playing__artists" v-text="getTrackArtists"></h2>
       </div>
-      <!-- Add the controls here -->
-      <div class="now-playing__controls">
-        <button class="button" @click="previousTrack">Previous</button>
-        <button class="button" @click="togglePlayPause">
-          {{ player.playing ? 'Pause' : 'Play' }}
-        </button>
-        <button class="button" @click="nextTrack">Next</button>
-      </div>
     </div>
+    <div v-else class="now-playing" :class="getNowPlayingClass()">
+      <h1 class="now-playing__idle-heading">No music is playing 😔</h1>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -116,65 +116,6 @@ export default {
         this.$nextTick(() => {
           this.$emit('spotifyTrackUpdated', data)
         })
-      }
-    },
-
-    /**
-     * previous/skip/play/pause elements
-     */
-    async previousTrack() {
-      try {
-        await fetch('https://api.spotify.com/v1/me/player/previous', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${this.auth.accessToken}`,
-          },
-        });
-        // Optionally update the player data
-        this.getNowPlaying();
-      } catch (error) {
-        console.error('Error skipping to previous track:', error);
-      }
-    },
-
-    async nextTrack() {
-      try {
-        await fetch('https://api.spotify.com/v1/me/player/next', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${this.auth.accessToken}`,
-          },
-        });
-        // Optionally update the player data
-        this.getNowPlaying();
-      } catch (error) {
-        console.error('Error skipping to next track:', error);
-      }
-    },
-
-    async togglePlayPause() {
-      try {
-        if (this.player.playing) {
-          await fetch('https://api.spotify.com/v1/me/player/pause', {
-            method: 'PUT',
-            headers: {
-              Authorization: `Bearer ${this.auth.accessToken}`,
-            },
-          });
-        } else {
-          await fetch('https://api.spotify.com/v1/me/player/play', {
-            method: 'PUT',
-            headers: {
-              Authorization: `Bearer ${this.auth.accessToken}`,
-            },
-          });
-        }
-        // Update the player state after a short delay to allow Spotify to process
-        setTimeout(() => {
-          this.getNowPlaying();
-        }, 500);
-      } catch (error) {
-        console.error('Error toggling play/pause:', error);
       }
     },
 
