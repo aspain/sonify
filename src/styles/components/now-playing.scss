@@ -58,16 +58,17 @@
 
   @media only screen and (min-width: 767px) {
     flex-flow: row nowrap;
-    padding: 10%;
-
-    &__cover,
-    &__details {
-      width: 50%;
+    padding: 2rem 4rem; 
+  
+    &__cover {
+      width: 33%;
       max-width: 495px;
+      text-align: center;
     }
-
+  
     &__details {
+      width: 67%;
       text-align: left;
     }
   }
-}
+  
