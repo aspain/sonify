@@ -37,12 +37,12 @@
 
   &__track {
     font-weight: var(--font-weight-heading);
-    font-size: 48px;
+    font-size: 60px;
   }
 
   &__artists {
     opacity: 0.8;
-    font-size: 40px;
+    font-size: 52px;
   }
 
   &--active {
@@ -68,6 +68,27 @@
 
     &__details {
       text-align: left;
+    }
+  }
+}
+
+.now-playing__controls {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+
+  .button {
+    margin: 0 10px;
+    padding: 15px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    background-color: var(--color-brand-spotify);
+    color: var(--color-text-primary);
+    border: none;
+
+    &:hover {
+      background-color: darken(var(--color-brand-spotify), 10%);
+      cursor: pointer;
     }
   }
 }
