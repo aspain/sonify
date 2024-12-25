@@ -4,7 +4,7 @@
  * Styles for the 'Now Playing' screen.
  *
  */
-.now-playing {
+ .now-playing {
   background-color: var(--colour-background-now-playing);
   color: var(--color-text-primary);
   display: flex;
@@ -68,27 +68,6 @@
 
     &__details {
       text-align: left;
-    }
-  }
-}
-
-.now-playing__controls {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
-
-  .button {
-    margin: 0 10px;
-    padding: 15px 20px;
-    font-size: 16px;
-    border-radius: 5px;
-    background-color: var(--color-brand-spotify);
-    color: var(--color-text-primary);
-    border: none;
-
-    &:hover {
-      background-color: darken(var(--color-brand-spotify), 10%);
-      cursor: pointer;
     }
   }
 }
