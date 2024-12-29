@@ -248,20 +248,45 @@ export default {
           return item === null ? null : item
         })
         .map(colour => {
+          const bgHex = palette[colour].getHex()
+          // Optionally use Vibrant's getTitleTextColor()
+          // but override if brightness is above our threshold:
+          let textColor = palette[colour].getTitleTextColor()
+
+          // Calculate brightness & adjust text color if needed
+          const brightness = this.calculateBrightness(bgHex)
+          const threshold = 150 // Increase to get black text more often
+          if (brightness > threshold) {
+            textColor = '#000' // Force black if background is "too light"
+          }
+
           return {
-            text: palette[colour].getTitleTextColor(),
-            background: palette[colour].getHex()
+            text: textColor,
+            background: bgHex
           }
         })
 
       this.swatches = albumColours
-
       this.colourPalette =
         albumColours[Math.floor(Math.random() * albumColours.length)]
 
       this.$nextTick(() => {
         this.setAppColours()
       })
+    },
+
+    // Add a helper function to compute brightness
+    calculateBrightness(hex) {
+      // Remove '#' if present
+      const c = hex.replace('#', '')
+      // Convert to RGB
+      const rgb = parseInt(c, 16)
+      const r = (rgb >> 16) & 0xff
+      const g = (rgb >> 8) & 0xff
+      const b = (rgb >> 0) & 0xff
+
+      // Formula for perceived brightness
+      return 0.299 * r + 0.587 * g + 0.114 * b
     },
 
     /**
