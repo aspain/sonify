@@ -13,13 +13,8 @@
         />
       </div>
       <div class="now-playing__details">
-        <!-- Added refs here so we can resize text -->
-        <h1 ref="trackTitle" class="now-playing__track">
-          {{ player.trackTitle }}
-        </h1>
-        <h2 ref="artistsName" class="now-playing__artists">
-          {{ getTrackArtists }}
-        </h2>
+        <h1 class="now-playing__track" v-text="player.trackTitle"></h1>
+        <h2 class="now-playing__artists" v-text="getTrackArtists"></h2>
       </div>
     </div>
     <div v-else class="now-playing" :class="getNowPlayingClass()">
@@ -54,6 +49,7 @@ export default {
   computed: {
     /**
      * Return a comma-separated list of track artists.
+     * @return {String}
      */
     getTrackArtists() {
       return this.player.trackArtists.join(', ')
@@ -61,18 +57,7 @@ export default {
   },
 
   mounted() {
-    // Start the data polling as before
     this.setDataInterval()
-
-    // After the DOM is ready, resize text in track/artist elements
-    this.$nextTick(() => {
-      if (this.$refs.trackTitle) {
-        this.autoResizeText(this.$refs.trackTitle, 84, 14)
-      }
-      if (this.$refs.artistsName) {
-        this.autoResizeText(this.$refs.artistsName, 80, 14)
-      }
-    })
   },
 
   beforeDestroy() {
@@ -81,26 +66,12 @@ export default {
 
   methods: {
     /**
-     * Dynamically shrink text until it fits its container.
-     * @param {HTMLElement} el
-     * @param {Number} startSize
-     * @param {Number} minSize
-     */
-    autoResizeText(el, startSize, minSize) {
-      let currentSize = startSize
-      el.style.fontSize = `${currentSize}px`
-      // Shrink text until it fits or hits minSize
-      while (el.scrollWidth > el.clientWidth && currentSize > minSize) {
-        currentSize--
-        el.style.fontSize = `${currentSize}px`
-      }
-    },
-
-    /**
-     * Fetch current playing data from Spotify.
+     * Make the network request to Spotify to
+     * get the current played track.
      */
     async getNowPlaying() {
       let data = {}
+
       try {
         const response = await fetch(
           `${this.endpoints.base}/${this.endpoints.nowPlaying}`,
@@ -118,11 +89,9 @@ export default {
         if (response.status === 204) {
           data = this.getEmptyPlayer()
           this.playerData = data
-
           this.$nextTick(() => {
             this.$emit('spotifyTrackUpdated', data)
           })
-
           return
         }
 
@@ -132,7 +101,6 @@ export default {
         this.handleExpiredToken()
         data = this.getEmptyPlayer()
         this.playerData = data
-
         this.$nextTick(() => {
           this.$emit('spotifyTrackUpdated', data)
         })
@@ -141,6 +109,7 @@ export default {
 
     /**
      * Get the Now Playing element class.
+     * @return {String}
      */
     getNowPlayingClass() {
       const playerClass = this.player.playing ? 'active' : 'idle'
@@ -148,13 +117,12 @@ export default {
     },
 
     /**
-     * Extract colour palette from album cover using Vibrant.
+     * Get the colour palette from the album cover.
      */
     getAlbumColours() {
       if (!this.player.trackAlbum?.image) {
         return
       }
-
       Vibrant.from(this.player.trackAlbum.image)
         .quality(1)
         .clearFilters()
@@ -165,7 +133,8 @@ export default {
     },
 
     /**
-     * Return an empty object for idle state.
+     * Return a formatted empty object for an idle player.
+     * @return {Object}
      */
     getEmptyPlayer() {
       return {
@@ -188,7 +157,7 @@ export default {
     },
 
     /**
-     * Set the color styles in the DOM.
+     * Set the stylings of the app based on received colours.
      */
     setAppColours() {
       document.documentElement.style.setProperty(
@@ -202,7 +171,7 @@ export default {
     },
 
     /**
-     * Handle new Spotify track data.
+     * Handle newly updated Spotify Tracks.
      */
     handleNowPlaying() {
       if (
@@ -213,18 +182,15 @@ export default {
         return
       }
 
-      // Paused
       if (this.playerResponse.is_playing === false) {
         this.playerData = this.getEmptyPlayer()
         return
       }
 
-      // If it's the same track as before, do nothing
       if (this.playerResponse.item?.id === this.playerData.trackId) {
         return
       }
 
-      // Store the new track data
       this.playerData = {
         playing: this.playerResponse.is_playing,
         trackArtists: this.playerResponse.item.artists.map(
@@ -240,22 +206,21 @@ export default {
     },
 
     /**
-     * Handle Vibrant palette results.
+     * Handle newly stored colour palette:
      */
     handleAlbumPalette(palette) {
       let albumColours = Object.keys(palette)
-        .filter(item => item !== null)
+        .filter(item => {
+          return item === null ? null : item
+        })
         .map(colour => {
           const bgHex = palette[colour].getHex()
           let textColor = palette[colour].getTitleTextColor()
-
-          // If background is too light, override to black
           const brightness = this.calculateBrightness(bgHex)
           const threshold = 150
           if (brightness > threshold) {
             textColor = '#000'
           }
-
           return {
             text: textColor,
             background: bgHex
@@ -272,19 +237,19 @@ export default {
     },
 
     /**
-     * Calculate brightness of a hex color.
+     * Helper function to compute brightness
      */
     calculateBrightness(hex) {
       const c = hex.replace('#', '')
       const rgb = parseInt(c, 16)
       const r = (rgb >> 16) & 0xff
       const g = (rgb >> 8) & 0xff
-      const b = rgb & 0xff
+      const b = (rgb >> 0) & 0xff
       return 0.299 * r + 0.587 * g + 0.114 * b
     },
 
     /**
-     * Handle Spotify token expiration.
+     * Handle an expired access token from Spotify.
      */
     handleExpiredToken() {
       clearInterval(this.pollPlaying)
@@ -293,25 +258,14 @@ export default {
   },
 
   watch: {
-    /**
-     * Watch Spotify authentication changes.
-     */
     auth: function(oldVal, newVal) {
       if (newVal.status === false) {
         clearInterval(this.pollPlaying)
       }
     },
-
-    /**
-     * Watch for new Spotify track response.
-     */
     playerResponse: function() {
       this.handleNowPlaying()
     },
-
-    /**
-     * Watch local track data.
-     */
     playerData: function() {
       this.$emit('spotifyTrackUpdated', this.playerData)
       this.$nextTick(() => {
@@ -322,4 +276,4 @@ export default {
 }
 </script>
 
-<style src="@/styles/components/now-playing.scss" lang="scss" scoped></style>
+<style src="@/styles/components/now-playing.scss" lang="scss"></style>
