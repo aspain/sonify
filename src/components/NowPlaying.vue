@@ -13,8 +13,13 @@
         />
       </div>
       <div class="now-playing__details">
-        <h1 class="now-playing__track" v-text="player.trackTitle"></h1>
-        <h2 class="now-playing__artists" v-text="getTrackArtists"></h2>
+        <!-- Added refs here so we can resize text -->
+        <h1 ref="trackTitle" class="now-playing__track">
+          {{ player.trackTitle }}
+        </h1>
+        <h2 ref="artistsName" class="now-playing__artists">
+          {{ getTrackArtists }}
+        </h2>
       </div>
     </div>
     <div v-else class="now-playing" :class="getNowPlayingClass()">
@@ -25,7 +30,6 @@
 
 <script>
 import * as Vibrant from 'node-vibrant'
-
 import props from '@/utils/props.js'
 
 export default {
@@ -50,7 +54,6 @@ export default {
   computed: {
     /**
      * Return a comma-separated list of track artists.
-     * @return {String}
      */
     getTrackArtists() {
       return this.player.trackArtists.join(', ')
@@ -58,7 +61,18 @@ export default {
   },
 
   mounted() {
+    // Start the data polling as before
     this.setDataInterval()
+
+    // After the DOM is ready, resize text in track/artist elements
+    this.$nextTick(() => {
+      if (this.$refs.trackTitle) {
+        this.autoResizeText(this.$refs.trackTitle, 84, 14)
+      }
+      if (this.$refs.artistsName) {
+        this.autoResizeText(this.$refs.artistsName, 80, 14)
+      }
+    })
   },
 
   beforeDestroy() {
@@ -67,12 +81,26 @@ export default {
 
   methods: {
     /**
-     * Make the network request to Spotify to
-     * get the current played track.
+     * Dynamically shrink text until it fits its container.
+     * @param {HTMLElement} el
+     * @param {Number} startSize
+     * @param {Number} minSize
+     */
+    autoResizeText(el, startSize, minSize) {
+      let currentSize = startSize
+      el.style.fontSize = `${currentSize}px`
+      // Shrink text until it fits or hits minSize
+      while (el.scrollWidth > el.clientWidth && currentSize > minSize) {
+        currentSize--
+        el.style.fontSize = `${currentSize}px`
+      }
+    },
+
+    /**
+     * Fetch current playing data from Spotify.
      */
     async getNowPlaying() {
       let data = {}
-
       try {
         const response = await fetch(
           `${this.endpoints.base}/${this.endpoints.nowPlaying}`,
@@ -83,17 +111,10 @@ export default {
           }
         )
 
-        /**
-         * Fetch error.
-         */
         if (!response.ok) {
           throw new Error(`An error has occured: ${response.status}`)
         }
 
-        /**
-         * Spotify returns a 204 when no current device session is found.
-         * The connection was successful but there's no content to return.
-         */
         if (response.status === 204) {
           data = this.getEmptyPlayer()
           this.playerData = data
@@ -109,7 +130,6 @@ export default {
         this.playerResponse = data
       } catch (error) {
         this.handleExpiredToken()
-
         data = this.getEmptyPlayer()
         this.playerData = data
 
@@ -121,7 +141,6 @@ export default {
 
     /**
      * Get the Now Playing element class.
-     * @return {String}
      */
     getNowPlayingClass() {
       const playerClass = this.player.playing ? 'active' : 'idle'
@@ -129,19 +148,13 @@ export default {
     },
 
     /**
-     * Get the colour palette from the album cover.
+     * Extract colour palette from album cover using Vibrant.
      */
     getAlbumColours() {
-      /**
-       * No image (rare).
-       */
       if (!this.player.trackAlbum?.image) {
         return
       }
 
-      /**
-       * Run node-vibrant to get colours.
-       */
       Vibrant.from(this.player.trackAlbum.image)
         .quality(1)
         .clearFilters()
@@ -152,8 +165,7 @@ export default {
     },
 
     /**
-     * Return a formatted empty object for an idle player.
-     * @return {Object}
+     * Return an empty object for idle state.
      */
     getEmptyPlayer() {
       return {
@@ -176,14 +188,13 @@ export default {
     },
 
     /**
-     * Set the stylings of the app based on received colours.
+     * Set the color styles in the DOM.
      */
     setAppColours() {
       document.documentElement.style.setProperty(
         '--color-text-primary',
         this.colourPalette.text
       )
-
       document.documentElement.style.setProperty(
         '--colour-background-now-playing',
         this.colourPalette.background
@@ -191,7 +202,7 @@ export default {
     },
 
     /**
-     * Handle newly updated Spotify Tracks.
+     * Handle new Spotify track data.
      */
     handleNowPlaying() {
       if (
@@ -199,30 +210,21 @@ export default {
         this.playerResponse.error?.status === 400
       ) {
         this.handleExpiredToken()
-
         return
       }
 
-      /**
-       * Player is active, but user has paused.
-       */
+      // Paused
       if (this.playerResponse.is_playing === false) {
         this.playerData = this.getEmptyPlayer()
-
         return
       }
 
-      /**
-       * The newly fetched track is the same as our stored
-       * one, we don't want to update the DOM yet.
-       */
+      // If it's the same track as before, do nothing
       if (this.playerResponse.item?.id === this.playerData.trackId) {
         return
       }
 
-      /**
-       * Store the current active track.
-       */
+      // Store the new track data
       this.playerData = {
         playing: this.playerResponse.is_playing,
         trackArtists: this.playerResponse.item.artists.map(
@@ -238,26 +240,20 @@ export default {
     },
 
     /**
-     * Handle newly stored colour palette:
-     * - Map data to readable format
-     * - Get and store random colour combination.
+     * Handle Vibrant palette results.
      */
     handleAlbumPalette(palette) {
       let albumColours = Object.keys(palette)
-        .filter(item => {
-          return item === null ? null : item
-        })
+        .filter(item => item !== null)
         .map(colour => {
           const bgHex = palette[colour].getHex()
-          // Optionally use Vibrant's getTitleTextColor()
-          // but override if brightness is above our threshold:
           let textColor = palette[colour].getTitleTextColor()
 
-          // Calculate brightness & adjust text color if needed
+          // If background is too light, override to black
           const brightness = this.calculateBrightness(bgHex)
-          const threshold = 150 // Increase to get black text more often
+          const threshold = 150
           if (brightness > threshold) {
-            textColor = '#000' // Force black if background is "too light"
+            textColor = '#000'
           }
 
           return {
@@ -275,31 +271,30 @@ export default {
       })
     },
 
-    // Add a helper function to compute brightness
+    /**
+     * Calculate brightness of a hex color.
+     */
     calculateBrightness(hex) {
-      // Remove '#' if present
       const c = hex.replace('#', '')
-      // Convert to RGB
       const rgb = parseInt(c, 16)
       const r = (rgb >> 16) & 0xff
       const g = (rgb >> 8) & 0xff
-      const b = (rgb >> 0) & 0xff
-
-      // Formula for perceived brightness
+      const b = rgb & 0xff
       return 0.299 * r + 0.587 * g + 0.114 * b
     },
 
     /**
-     * Handle an expired access token from Spotify.
+     * Handle Spotify token expiration.
      */
     handleExpiredToken() {
       clearInterval(this.pollPlaying)
       this.$emit('requestRefreshToken')
     }
   },
+
   watch: {
     /**
-     * Watch the auth object returned from Spotify.
+     * Watch Spotify authentication changes.
      */
     auth: function(oldVal, newVal) {
       if (newVal.status === false) {
@@ -308,18 +303,17 @@ export default {
     },
 
     /**
-     * Watch the returned track object.
+     * Watch for new Spotify track response.
      */
     playerResponse: function() {
       this.handleNowPlaying()
     },
 
     /**
-     * Watch our locally stored track data.
+     * Watch local track data.
      */
     playerData: function() {
       this.$emit('spotifyTrackUpdated', this.playerData)
-
       this.$nextTick(() => {
         this.getAlbumColours()
       })
