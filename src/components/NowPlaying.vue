@@ -6,31 +6,23 @@
       :class="getNowPlayingClass()"
     >
       <div class="now-playing__cover">
+        <!-- IMPORTANT: onImageLoaded triggers when the album image has loaded -->
         <img
           :src="player.trackAlbum.image"
           :alt="player.trackTitle"
           class="now-playing__image"
+          @load="onImageLoaded"
         />
       </div>
       <div class="now-playing__details">
-        <!-- Use :key so Vue re-renders each new track -->
-        <h1
-          ref="trackElement"
-          class="now-playing__track"
-          :key="playerData.trackId + '-title'"
-        >
+        <h1 ref="trackElement" class="now-playing__track">
           {{ player.trackTitle }}
         </h1>
-        <h2
-          ref="artistElement"
-          class="now-playing__artists"
-          :key="playerData.trackId + '-artist'"
-        >
+        <h2 ref="artistElement" class="now-playing__artists">
           {{ getTrackArtists }}
         </h2>
       </div>
     </div>
-
     <div v-else class="now-playing" :class="getNowPlayingClass()">
       <h1 class="now-playing__idle-heading">No music is playing 😔</h1>
     </div>
@@ -77,21 +69,14 @@ export default {
     })
   },
 
-  /**
-   * Whenever the component updates (e.g., new track data),
-   * trigger another resize check.
-   */
-  updated() {
-    this.$nextTick(() => {
-      this.resizeAllText()
-    })
-  },
-
   beforeDestroy() {
     clearInterval(this.pollPlaying)
   },
 
   methods: {
+    /**
+     * Make the network request to Spotify to get the current played track.
+     */
     async getNowPlaying() {
       let data = {}
       try {
@@ -129,15 +114,19 @@ export default {
       }
     },
 
+    /**
+     * Get the Now Playing element class.
+     */
     getNowPlayingClass() {
       const playerClass = this.player.playing ? 'active' : 'idle'
       return `now-playing--${playerClass}`
     },
 
+    /**
+     * Get the colour palette from the album cover.
+     */
     getAlbumColours() {
-      if (!this.player.trackAlbum?.image) {
-        return
-      }
+      if (!this.player.trackAlbum?.image) return
       Vibrant.from(this.player.trackAlbum.image)
         .quality(1)
         .clearFilters()
@@ -147,6 +136,9 @@ export default {
         })
     },
 
+    /**
+     * Return a formatted empty object for an idle player.
+     */
     getEmptyPlayer() {
       return {
         playing: false,
@@ -157,6 +149,9 @@ export default {
       }
     },
 
+    /**
+     * Poll Spotify for data.
+     */
     setDataInterval() {
       clearInterval(this.pollPlaying)
       this.pollPlaying = setInterval(() => {
@@ -164,17 +159,9 @@ export default {
       }, 2500)
     },
 
-    setAppColours() {
-      document.documentElement.style.setProperty(
-        '--color-text-primary',
-        this.colourPalette.text
-      )
-      document.documentElement.style.setProperty(
-        '--colour-background-now-playing',
-        this.colourPalette.background
-      )
-    },
-
+    /**
+     * Handle newly updated Spotify Tracks.
+     */
     handleNowPlaying() {
       if (
         this.playerResponse.error?.status === 401 ||
@@ -189,7 +176,7 @@ export default {
         return
       }
 
-      // Update only if a new track is playing
+      // Only update if new track ID is different
       if (this.playerResponse.item?.id === this.playerData.trackId) {
         return
       }
@@ -206,11 +193,12 @@ export default {
       }
     },
 
+    /**
+     * Handle newly stored colour palette.
+     */
     handleAlbumPalette(palette) {
       let albumColours = Object.keys(palette)
-        .filter(item => {
-          return item === null ? null : item
-        })
+        .filter(item => item !== null)
         .map(colour => {
           const bgHex = palette[colour].getHex()
           let textColor = palette[colour].getTitleTextColor()
@@ -246,16 +234,18 @@ export default {
     },
 
     /**
-     * Manually adjust font sizes to ensure no scrollbars.
+     * Dynamically resize both track and artist text to fit their containers.
      */
     resizeAllText() {
       this.resizeTextToFit(this.$refs.trackElement, 84, 16)
       this.resizeTextToFit(this.$refs.artistElement, 80, 16)
     },
 
+    /**
+     * Decrease font size until it fits without causing scrollbars.
+     */
     resizeTextToFit(el, initialSize, minSize) {
       if (!el) return
-
       const container = el.parentElement
       let currentSize = initialSize
       el.style.fontSize = currentSize + 'px'
@@ -270,6 +260,33 @@ export default {
       }
     },
 
+    /**
+     * Runs after album image has loaded, ensuring container dimensions are final.
+     */
+    onImageLoaded() {
+      // Re-run sizing logic after the image is definitely in place
+      this.$nextTick(() => {
+        this.resizeAllText()
+      })
+    },
+
+    /**
+     * Apply the chosen color palette to CSS variables.
+     */
+    setAppColours() {
+      document.documentElement.style.setProperty(
+        '--color-text-primary',
+        this.colourPalette.text
+      )
+      document.documentElement.style.setProperty(
+        '--colour-background-now-playing',
+        this.colourPalette.background
+      )
+    },
+
+    /**
+     * Handle an expired access token from Spotify.
+     */
     handleExpiredToken() {
       clearInterval(this.pollPlaying)
       this.$emit('requestRefreshToken')
@@ -277,19 +294,21 @@ export default {
   },
 
   watch: {
+    // If auth becomes invalid, stop polling
     auth: function(oldVal, newVal) {
       if (newVal.status === false) {
         clearInterval(this.pollPlaying)
       }
     },
 
-    playerResponse: function() {
+    // Each time we get a new playerResponse, handle changes
+    playerResponse() {
       this.handleNowPlaying()
     },
 
-    playerData: function() {
+    // Whenever our local track data changes, emit and re-run text sizing & color extraction
+    playerData() {
       this.$emit('spotifyTrackUpdated', this.playerData)
-      // Once we have new track info, do a final text resize + album color extraction
       this.$nextTick(() => {
         this.resizeAllText()
         this.getAlbumColours()
@@ -299,5 +318,4 @@ export default {
 }
 </script>
 
-<!-- Removed 'scoped' to ensure proper container sizing for dynamic text resizing -->
 <style src="@/styles/components/now-playing.scss" lang="scss"></style>

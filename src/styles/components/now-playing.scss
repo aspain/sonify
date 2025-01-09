@@ -2,6 +2,7 @@
  * Component: Now Playing.
  * -----------------------------------------------------------------------------
  * Styles for the 'Now Playing' screen.
+ *
  */
  .now-playing {
   background-color: var(--colour-background-now-playing);
@@ -24,7 +25,7 @@
   }
 
   &__image {
-    box-shadow: 1px 1px 16px -2px rgba(0, 0, 0, .3);
+    box-shadow: 1px 1px 16px -2px rgba(0, 0, 0, 0.3);
     height: auto;
     max-width: 60vw;
     width: 100%;
@@ -41,13 +42,11 @@
   &__track {
     flex: 1;
     display: flex;
-    align-items: flex-end; /* push text to bottom of region */
+    align-items: flex-end;
     justify-content: flex-start;
     font-weight: var(--font-weight-heading);
     font-size: 84px;
-    margin: 0; /* remove default margins so alignment is precise */
-
-    /* Allow wrapping. */
+    margin: 0;
     white-space: normal;
     word-break: break-word;
   }
@@ -55,13 +54,11 @@
   &__artists {
     flex: 1;
     display: flex;
-    align-items: flex-start; /* push text to top of region */
+    align-items: flex-start;
     justify-content: flex-start;
     opacity: 0.85;
     font-size: 80px;
     margin: 0;
-
-    /* Similarly allow wrapping. */
     white-space: normal;
     word-break: break-word;
   }
