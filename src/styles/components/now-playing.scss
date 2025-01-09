@@ -32,54 +32,53 @@
   }
 
   &__details {
-    /* 
-     * We'll make this container a vertical flex container 
-     * that splits into two halves: 
-     * the top half for track title, the bottom half for artist. 
-     */
     display: flex;
     flex-direction: column;
-    justify-content: space-between; /* spaces track and artist apart */
-    text-align: center;
+    /* 
+     * We want to split the area into two flexible regions:
+     * top half for track, bottom half for artist.
+     */
     height: 100%;
+    text-align: center;
+  }
+
+  /* 
+   * Container that holds the track title at the bottom of the top half.
+   */
+  &__track-container {
+    flex: 1; /* occupy top half */
+    display: flex;
+    align-items: flex-end;  /* align track text to bottom of container */
+    justify-content: flex-start;
+    overflow: hidden; /* hide scrollbars if text happens to overflow */
+    position: relative;
+  }
+
+  /* 
+   * Container that holds the artist name at the top of the bottom half.
+   */
+  &__artist-container {
+    flex: 1; /* occupy bottom half */
+    display: flex;
+    align-items: flex-start; /* align artist text to top of container */
+    justify-content: flex-start;
+    overflow: hidden;
+    position: relative;
   }
 
   &__track {
-    /* 
-     * Let track title occupy the top “half”, but align it to the bottom. 
-     */
-    flex: 1;
-    display: flex;
-    align-items: flex-end;     /* push text to bottom of region */
-    justify-content: flex-start; 
+    margin: 0;
     font-weight: var(--font-weight-heading);
     font-size: 84px;
-    margin: 0;  /* remove default margins so alignment is precise */
-
-    /* 
-     * Allow wrapping without breaking words or adding ellipses 
-     * (by default, h1 can wrap).
-     */
-    white-space: normal;
+    white-space: normal;  /* allow multi-line wrapping */
     word-break: break-word;
   }
 
   &__artists {
-    /* 
-     * Occupies the bottom “half”, align to the top. 
-     */
-    flex: 1;
-    display: flex;
-    align-items: flex-start;   /* push text to top of region */
-    justify-content: flex-start;
-    opacity: 0.85;
-    font-size: 80px;
     margin: 0;
-
-    /* 
-     * Similarly allow wrapping without truncation. 
-     */
-    white-space: normal;
+    font-size: 80px;
+    opacity: 0.85;
+    white-space: normal;  /* allow multi-line wrapping */
     word-break: break-word;
   }
 
@@ -113,8 +112,8 @@
       height: 100%;
     }
 
-    &__track,
-    &__artists {
+    &__track-container,
+    &__artist-container {
       justify-content: flex-start;
     }
   }
