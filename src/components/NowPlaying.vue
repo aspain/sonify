@@ -1,24 +1,24 @@
 <template>
   <div id="app">
+    <!-- Use playerData here rather than player -->
     <div
-      v-if="player.playing"
+      v-if="playerData.playing"
       class="now-playing"
       :class="getNowPlayingClass()"
     >
       <div class="now-playing__cover">
         <img
-          :src="player.trackAlbum.image"
-          :alt="player.trackTitle"
+          :src="playerData.trackAlbum.image"
+          :alt="playerData.trackTitle"
           class="now-playing__image"
         />
       </div>
       <div class="now-playing__details">
-        <!-- Give these elements refs for resizing logic -->
         <h1 ref="trackElement" class="now-playing__track">
-          {{ player.trackTitle }}
+          {{ playerData.trackTitle }}
         </h1>
         <h2 ref="artistElement" class="now-playing__artists">
-          {{ getTrackArtists }}
+          {{ getPlayerDataArtists }}
         </h2>
       </div>
     </div>
@@ -38,6 +38,8 @@ export default {
   props: {
     auth: props.auth,
     endpoints: props.endpoints,
+    // keep this around for other references,
+    // but we won't directly render from it
     player: props.player
   },
 
@@ -45,6 +47,7 @@ export default {
     return {
       pollPlaying: '',
       playerResponse: {},
+      // This is the object you actually mutate in watchers:
       playerData: this.getEmptyPlayer(),
       colourPalette: '',
       swatches: []
@@ -53,11 +56,19 @@ export default {
 
   computed: {
     /**
-     * Return a comma-separated list of track artists.
-     * @return {String}
+     * If you still want a computed for the prop,
+     * you can keep it, but we’ll rely on playerData in the template.
      */
     getTrackArtists() {
       return this.player.trackArtists.join(', ')
+    },
+
+    /**
+     * A simple computed that returns a comma-separated
+     * list of artists from our local playerData object.
+     */
+    getPlayerDataArtists() {
+      return this.playerData.trackArtists.join(', ')
     }
   },
 
@@ -74,13 +85,8 @@ export default {
   },
 
   methods: {
-    /**
-     * Make the network request to Spotify to
-     * get the current played track.
-     */
     async getNowPlaying() {
       let data = {}
-
       try {
         const response = await fetch(
           `${this.endpoints.base}/${this.endpoints.nowPlaying}`,
@@ -116,23 +122,15 @@ export default {
       }
     },
 
-    /**
-     * Get the Now Playing element class.
-     * @return {String}
-     */
     getNowPlayingClass() {
-      const playerClass = this.player.playing ? 'active' : 'idle'
+      // Compare against our local playerData for class
+      const playerClass = this.playerData.playing ? 'active' : 'idle'
       return `now-playing--${playerClass}`
     },
 
-    /**
-     * Get the colour palette from the album cover.
-     */
     getAlbumColours() {
-      if (!this.player.trackAlbum?.image) {
-        return
-      }
-      Vibrant.from(this.player.trackAlbum.image)
+      if (!this.playerData.trackAlbum?.image) return
+      Vibrant.from(this.playerData.trackAlbum.image)
         .quality(1)
         .clearFilters()
         .getPalette()
@@ -141,10 +139,6 @@ export default {
         })
     },
 
-    /**
-     * Return a formatted empty object for an idle player.
-     * @return {Object}
-     */
     getEmptyPlayer() {
       return {
         playing: false,
@@ -155,9 +149,6 @@ export default {
       }
     },
 
-    /**
-     * Poll Spotify for data.
-     */
     setDataInterval() {
       clearInterval(this.pollPlaying)
       this.pollPlaying = setInterval(() => {
@@ -165,9 +156,6 @@ export default {
       }, 2500)
     },
 
-    /**
-     * Set the stylings of the app based on received colours.
-     */
     setAppColours() {
       document.documentElement.style.setProperty(
         '--color-text-primary',
@@ -179,9 +167,6 @@ export default {
       )
     },
 
-    /**
-     * Handle newly updated Spotify Tracks.
-     */
     handleNowPlaying() {
       if (
         this.playerResponse.error?.status === 401 ||
@@ -196,6 +181,7 @@ export default {
         return
       }
 
+      // Only update local playerData if track has changed
       if (this.playerResponse.item?.id === this.playerData.trackId) {
         return
       }
@@ -214,14 +200,9 @@ export default {
       }
     },
 
-    /**
-     * Handle newly stored colour palette.
-     */
     handleAlbumPalette(palette) {
       let albumColours = Object.keys(palette)
-        .filter(item => {
-          return item === null ? null : item
-        })
+        .filter(item => item)
         .map(colour => {
           const bgHex = palette[colour].getHex()
           let textColor = palette[colour].getTitleTextColor()
@@ -247,7 +228,6 @@ export default {
       })
     },
 
-    // Helper function to compute brightness for color palette usage
     calculateBrightness(hex) {
       const c = hex.replace('#', '')
       const rgb = parseInt(c, 16)
@@ -257,31 +237,21 @@ export default {
       return 0.299 * r + 0.587 * g + 0.114 * b
     },
 
-    /**
-     * Attempt to resize track and artist text to fit their containers.
-     */
     resizeAllText() {
       this.resizeTextToFit(this.$refs.trackElement, 84, 16)
       this.resizeTextToFit(this.$refs.artistElement, 80, 16)
     },
 
-    /**
-     * Dynamically resize text until it fits the container’s dimensions without scrolling.
-     * @param {HTMLElement} el        The element whose text needs resizing
-     * @param {number} initialSize    The starting font size (e.g. 84)
-     * @param {number} minSize        The smallest allowed font size (e.g. 16)
-     */
     resizeTextToFit(el, initialSize, minSize) {
       if (!el) return
 
-      // The container is the parent (the "top half" or "bottom half" region).
       const container = el.parentElement
       let currentSize = initialSize
       el.style.fontSize = currentSize + 'px'
 
-      // Decrease size until it fits without causing scrollbars.
       while (
-        (el.scrollHeight > container.clientHeight || el.scrollWidth > container.clientWidth) &&
+        (el.scrollHeight > container.clientHeight ||
+          el.scrollWidth > container.clientWidth) &&
         currentSize > minSize
       ) {
         currentSize--
@@ -289,9 +259,6 @@ export default {
       }
     },
 
-    /**
-     * Handle an expired access token from Spotify.
-     */
     handleExpiredToken() {
       clearInterval(this.pollPlaying)
       this.$emit('requestRefreshToken')
@@ -299,9 +266,6 @@ export default {
   },
 
   watch: {
-    /**
-     * Watch the auth object returned from Spotify.
-     */
     auth: function(oldVal, newVal) {
       if (newVal.status === false) {
         clearInterval(this.pollPlaying)
@@ -309,26 +273,20 @@ export default {
     },
 
     /**
-     * Watch the returned track object.
+     * Watch the returned track object
      */
     playerResponse: function() {
       this.handleNowPlaying()
     },
 
     /**
-     * Watch our locally stored track data.
+     * Watch our local playerData object
      */
     playerData: function() {
       this.$emit('spotifyTrackUpdated', this.playerData)
-
       this.$nextTick(() => {
-        // Force reflow by reading offsetHeight (no assignment needed)
-        void this.$refs.trackElement?.offsetHeight
-
-        setTimeout(() => {
-          this.resizeAllText()
-          this.getAlbumColours()
-        }, 0)
+        this.resizeAllText()
+        this.getAlbumColours()
       })
     }
   }
