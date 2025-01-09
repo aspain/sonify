@@ -13,9 +13,9 @@
         />
       </div>
       <div class="now-playing__details">
-        <!-- ADD A 'ref' FOR TRACK AND ARTISTS TO HELP WITH DYNAMIC SIZING -->
-        <h1 class="now-playing__track" ref="track" v-text="player.trackTitle"></h1>
-        <h2 class="now-playing__artists" ref="artists" v-text="getTrackArtists"></h2>
+        <!-- Use refs for text elements to dynamically adjust font sizes -->
+        <h1 class="now-playing__track" ref="trackTitle">{{ player.trackTitle }}</h1>
+        <h2 class="now-playing__artists" ref="trackArtists">{{ getTrackArtists }}</h2>
       </div>
     </div>
     <div v-else class="now-playing" :class="getNowPlayingClass()">
@@ -26,7 +26,6 @@
 
 <script>
 import * as Vibrant from 'node-vibrant'
-
 import props from '@/utils/props.js'
 
 export default {
@@ -60,7 +59,7 @@ export default {
 
   mounted() {
     this.setDataInterval()
-    // RUN THE TEXT SIZING METHOD ONCE WHEN COMPONENT MOUNTS
+    // Optionally run once at mount for an initial sizing check
     this.$nextTick(() => {
       this.adjustTextSize()
     })
@@ -88,25 +87,18 @@ export default {
           }
         )
 
-        /**
-         * Fetch error.
-         */
         if (!response.ok) {
           throw new Error(`An error has occured: ${response.status}`)
         }
 
-        /**
-         * Spotify returns a 204 when no current device session is found.
-         * The connection was successful but there's no content to return.
-         */
         if (response.status === 204) {
           data = this.getEmptyPlayer()
           this.playerData = data
 
           this.$nextTick(() => {
             this.$emit('spotifyTrackUpdated', data)
+            this.adjustTextSize() // check font once more
           })
-
           return
         }
 
@@ -120,33 +112,20 @@ export default {
 
         this.$nextTick(() => {
           this.$emit('spotifyTrackUpdated', data)
+          this.adjustTextSize() // check font once more
         })
       }
     },
 
-    /**
-     * Get the Now Playing element class.
-     * @return {String}
-     */
     getNowPlayingClass() {
       const playerClass = this.player.playing ? 'active' : 'idle'
       return `now-playing--${playerClass}`
     },
 
-    /**
-     * Get the colour palette from the album cover.
-     */
     getAlbumColours() {
-      /**
-       * No image (rare).
-       */
       if (!this.player.trackAlbum?.image) {
         return
       }
-
-      /**
-       * Run node-vibrant to get colours.
-       */
       Vibrant.from(this.player.trackAlbum.image)
         .quality(1)
         .clearFilters()
@@ -156,10 +135,6 @@ export default {
         })
     },
 
-    /**
-     * Return a formatted empty object for an idle player.
-     * @return {Object}
-     */
     getEmptyPlayer() {
       return {
         playing: false,
@@ -170,9 +145,6 @@ export default {
       }
     },
 
-    /**
-     * Poll Spotify for data.
-     */
     setDataInterval() {
       clearInterval(this.pollPlaying)
       this.pollPlaying = setInterval(() => {
@@ -180,54 +152,35 @@ export default {
       }, 2500)
     },
 
-    /**
-     * Set the stylings of the app based on received colours.
-     */
     setAppColours() {
       document.documentElement.style.setProperty(
         '--color-text-primary',
         this.colourPalette.text
       )
-
       document.documentElement.style.setProperty(
         '--colour-background-now-playing',
         this.colourPalette.background
       )
     },
 
-    /**
-     * Handle newly updated Spotify Tracks.
-     */
     handleNowPlaying() {
       if (
         this.playerResponse.error?.status === 401 ||
         this.playerResponse.error?.status === 400
       ) {
         this.handleExpiredToken()
-
         return
       }
 
-      /**
-       * Player is active, but user has paused.
-       */
       if (this.playerResponse.is_playing === false) {
         this.playerData = this.getEmptyPlayer()
-
         return
       }
 
-      /**
-       * The newly fetched track is the same as our stored
-       * one, we don't want to update the DOM yet.
-       */
       if (this.playerResponse.item?.id === this.playerData.trackId) {
         return
       }
 
-      /**
-       * Store the current active track.
-       */
       this.playerData = {
         playing: this.playerResponse.is_playing,
         trackArtists: this.playerResponse.item.artists.map(
@@ -242,25 +195,15 @@ export default {
       }
     },
 
-    /**
-     * Handle newly stored colour palette:
-     * - Map data to readable format
-     * - Get and store random colour combination.
-     */
     handleAlbumPalette(palette) {
       let albumColours = Object.keys(palette)
-        .filter(item => {
-          return item === null ? null : item
-        })
+        .filter(item => item != null)
         .map(colour => {
           const bgHex = palette[colour].getHex()
-          // Optionally use Vibrant's getTitleTextColor()
-          // but override if brightness is above our threshold:
           let textColor = palette[colour].getTitleTextColor()
 
-          // Calculate brightness & adjust text color if needed
           const brightness = this.calculateBrightness(bgHex)
-          const threshold = 150 // Increase to get black text more often
+          const threshold = 150
           if (brightness > threshold) {
             textColor = '#000'
           }
@@ -280,47 +223,47 @@ export default {
       })
     },
 
-    // Helper to compute brightness
     calculateBrightness(hex) {
       const c = hex.replace('#', '')
       const rgb = parseInt(c, 16)
       const r = (rgb >> 16) & 0xff
       const g = (rgb >> 8) & 0xff
       const b = (rgb >> 0) & 0xff
-
-      // Formula for perceived brightness
       return 0.299 * r + 0.587 * g + 0.114 * b
     },
 
     /**
-     * Adjust text size so that the content does not overflow
-     * its container (removing the need for scrollbars).
+     * Dynamically adjust the text size if it overflows the container's
+     * max-height (which we set in SCSS).
+     * We reset the font size each time so we always start from the base.
      */
     adjustTextSize() {
-      // We'll do this for both the track title and artist elements
-      const elements = [this.$refs.track, this.$refs.artists]
+      // We'll do this for both trackTitle and trackArtists
+      const refsToAdjust = [this.$refs.trackTitle, this.$refs.trackArtists]
 
-      elements.forEach(el => {
+      refsToAdjust.forEach(el => {
         if (!el) return
 
-        // Reset style in case we previously shrank it
-        el.style.fontSize = ''
+        // Clear inline font-size so it reverts to what's in SCSS
+        el.style.fontSize = null
 
-        // Grab the initial computed font size to start from
-        let fontSize = parseInt(window.getComputedStyle(el).fontSize, 10)
+        // Grab current computed font size
+        let fontSize = parseFloat(window.getComputedStyle(el).fontSize)
 
-        // Shrink font until it no longer overflows
-        // or we hit a reasonable minimum (e.g., 24px).
-        while ((el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight) && fontSize > 24) {
-          fontSize--
+        // As soon as we set the text, Vue might not have fully rendered it.
+        // We do a quick forced reflow by reading clientHeight:
+        // (Not always necessary, but can help ensure correct measurements.)
+        // eslint-disable-next-line no-unused-vars
+        const forceReflow = el.clientHeight
+
+        // If it's still overflowing, keep shrinking until it fits or hits a minimum
+        while (el.scrollHeight > el.clientHeight && fontSize > 20) {
+          fontSize -= 1
           el.style.fontSize = fontSize + 'px'
         }
       })
     },
 
-    /**
-     * Handle an expired access token from Spotify.
-     */
     handleExpiredToken() {
       clearInterval(this.pollPlaying)
       this.$emit('requestRefreshToken')
@@ -328,32 +271,24 @@ export default {
   },
 
   watch: {
-    /**
-     * Watch the auth object returned from Spotify.
-     */
-    auth: function(oldVal, newVal) {
+    auth(newVal) {
       if (newVal.status === false) {
         clearInterval(this.pollPlaying)
       }
     },
-
-    /**
-     * Watch the returned track object.
-     */
-    playerResponse: function() {
+    playerResponse() {
       this.handleNowPlaying()
     },
-
     /**
-     * Watch our locally stored track data.
-     * When it changes, re-run the text sizing.
+     * Each time the track changes, we call adjustTextSize().
+     * That ensures we re-check for overflow if the new track has
+     * different lengths of title/artist.
      */
-    playerData: function() {
+    playerData() {
       this.$emit('spotifyTrackUpdated', this.playerData)
 
       this.$nextTick(() => {
         this.getAlbumColours()
-        // CALL TEXT SIZING AGAIN WHEN TRACK DATA CHANGES
         this.adjustTextSize()
       })
     }

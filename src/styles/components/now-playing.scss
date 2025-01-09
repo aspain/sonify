@@ -25,7 +25,7 @@
   }
 
   &__image {
-    box-shadow: 1px 1px 16px -2px rgba(0, 0, 0, .3);
+    box-shadow: 1px 1px 16px -2px rgba(0, 0, 0, 0.3);
     height: auto;
     max-width: 60vw;
     width: 100%;
@@ -35,30 +35,36 @@
     text-align: center;
   }
 
-  /* Allow multiline wrapping without breaking words */
+  /* TRACK TITLE STYLING */
   &__track {
     font-weight: var(--font-weight-heading);
     font-size: 84px;
 
-    /* ADDED FOR MULTILINE WRAPPING AND NO OVERFLOW SCROLLBARS */
+    /* Allow multiline wrapping */
     white-space: normal;
-    overflow-wrap: normal;
-    word-wrap: normal;
     word-break: normal;
+    overflow-wrap: break-word;
+
+    /* Hide any scrollbars and define max space to detect overflow */
     overflow: hidden;
+    max-height: 180px; /* Adjust this as desired */
+    margin: 0 auto;    /* Center if you like */
   }
 
-  /* Same approach for artists */
+  /* ARTISTS STYLING */
   &__artists {
     opacity: 0.85;
     font-size: 80px;
 
-    /* ADDED FOR MULTILINE WRAPPING AND NO OVERFLOW SCROLLBARS */
+    /* Allow multiline wrapping */
     white-space: normal;
-    overflow-wrap: normal;
-    word-wrap: normal;
     word-break: normal;
+    overflow-wrap: break-word;
+
+    /* Hide any scrollbars and define max space to detect overflow */
     overflow: hidden;
+    max-height: 180px; /* Adjust this as desired */
+    margin: 0 auto;    /* Center if you like */
   }
 
   &--active {
@@ -74,17 +80,17 @@
 
   @media only screen and (min-width: 767px) {
     flex-flow: row nowrap;
-    padding: 2rem 4rem; 
-  
+    padding: 2rem 4rem;
+
     &__cover {
       width: 33%;
       max-width: 495px;
       text-align: center;
     }
-  
+
     &__details {
       width: 67%;
       text-align: left;
     }
-  }  
+  }
 }
