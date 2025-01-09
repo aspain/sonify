@@ -6,10 +6,12 @@
       :class="getNowPlayingClass()"
     >
       <div class="now-playing__cover">
+        <!-- Add @load event -->
         <img
           :src="player.trackAlbum.image"
           :alt="player.trackTitle"
           class="now-playing__image"
+          @load="handleImageLoad"
         />
       </div>
       <div class="now-playing__details">
@@ -42,7 +44,7 @@ export default {
 
   data() {
     return {
-      pollPlaying: '',
+      pollPlaying: null,
       playerResponse: {},
       playerData: this.getEmptyPlayer(),
       colourPalette: '',
@@ -51,23 +53,24 @@ export default {
   },
 
   computed: {
-    /**
-     * Return a comma-separated list of track artists.
-     */
     getTrackArtists() {
       return this.player.trackArtists.join(', ')
     }
   },
 
   mounted() {
-    console.log('[mounted] Component mounted. Setting data interval and resizing text.')
+    console.log('[mounted] Component mounted. Setting data interval.')
     this.setDataInterval()
-    // Guard check: only resize if the ref elements actually exist
+
+    // If the user refreshes while a track is playing, we might already have refs available
+    // so we can attempt an immediate resize. If refs are not yet present, no worries—either
+    // the track is idle or handleImageLoad() will be called once the album art arrives.
     this.$nextTick(() => {
       if (this.$refs.trackElement && this.$refs.artistElement) {
+        console.log('[mounted] Attempting immediate resizeAllText.')
         this.resizeAllText()
       } else {
-        console.log('[mounted] trackElement or artistElement not found yet. Skipping resize.')
+        console.log('[mounted] trackElement or artistElement not found. Skipping immediate resize.')
       }
     })
   },
@@ -78,12 +81,9 @@ export default {
   },
 
   methods: {
-    /**
-     * Fetch the current playing track from Spotify.
-     */
     async getNowPlaying() {
       console.log('[getNowPlaying] Fetching track details...')
-      let data = {}
+      let data
 
       try {
         const response = await fetch(
@@ -97,7 +97,7 @@ export default {
 
         if (!response.ok) {
           console.error(`[getNowPlaying] Response not OK: ${response.status}`)
-          throw new Error(`An error has occured: ${response.status}`)
+          throw new Error(`Error: ${response.status}`)
         }
 
         if (response.status === 204) {
@@ -124,38 +124,10 @@ export default {
       }
     },
 
-    /**
-     * Determine the class for now-playing wrapper based on state.
-     */
     getNowPlayingClass() {
-      const playerClass = this.player.playing ? 'active' : 'idle'
-      return `now-playing--${playerClass}`
+      return `now-playing--${this.player.playing ? 'active' : 'idle'}`
     },
 
-    /**
-     * Extract album colors using node-vibrant.
-     */
-    getAlbumColours() {
-      if (!this.player.trackAlbum?.image) {
-        console.log('[getAlbumColours] No album image found. Skipping color extraction.')
-        return
-      }
-      console.log('[getAlbumColours] Extracting album colors from image:', this.player.trackAlbum.image)
-      Vibrant.from(this.player.trackAlbum.image)
-        .quality(1)
-        .clearFilters()
-        .getPalette()
-        .then(palette => {
-          this.handleAlbumPalette(palette)
-        })
-        .catch(err => {
-          console.error('[getAlbumColours] Error extracting palette:', err)
-        })
-    },
-
-    /**
-     * Return empty object for idle player.
-     */
     getEmptyPlayer() {
       return {
         playing: false,
@@ -166,9 +138,6 @@ export default {
       }
     },
 
-    /**
-     * Poll Spotify for updates every 2.5s.
-     */
     setDataInterval() {
       clearInterval(this.pollPlaying)
       console.log('[setDataInterval] Starting poll at 2.5s intervals.')
@@ -178,111 +147,19 @@ export default {
     },
 
     /**
-     * Apply new colors to the app after we get them from Vibrant.
+     * Called once the album image has fully loaded.
+     * We do a text resize here to ensure container dimensions are correct.
      */
-    setAppColours() {
-      console.log('[setAppColours] Setting text and background colors:', this.colourPalette)
-      document.documentElement.style.setProperty(
-        '--color-text-primary',
-        this.colourPalette.text
-      )
-      document.documentElement.style.setProperty(
-        '--colour-background-now-playing',
-        this.colourPalette.background
-      )
-    },
-
-    /**
-     * Update local playerData based on new Spotify data.
-     */
-    handleNowPlaying() {
-      console.log('[handleNowPlaying] Handling new playerResponse.')
-      if (
-        this.playerResponse.error?.status === 401 ||
-        this.playerResponse.error?.status === 400
-      ) {
-        console.warn('[handleNowPlaying] Token expired or invalid. Handling expired token.')
-        this.handleExpiredToken()
-        return
-      }
-
-      if (this.playerResponse.is_playing === false) {
-        console.log('[handleNowPlaying] No track is playing. Setting empty player.')
-        this.playerData = this.getEmptyPlayer()
-        return
-      }
-
-      if (this.playerResponse.item?.id === this.playerData.trackId) {
-        console.log('[handleNowPlaying] Same track ID as before. No update needed.')
-        return
-      }
-
-      console.log('[handleNowPlaying] Detected a new track. Updating local playerData.')
-      this.playerData = {
-        playing: this.playerResponse.is_playing,
-        trackArtists: this.playerResponse.item.artists.map(artist => artist.name),
-        trackTitle: this.playerResponse.item.name,
-        trackId: this.playerResponse.item.id,
-        trackAlbum: {
-          title: this.playerResponse.item.album.name,
-          image: this.playerResponse.item.album.images[0].url
-        }
-      }
-    },
-
-    /**
-     * Process Vibrant palette.
-     */
-    handleAlbumPalette(palette) {
-      console.log('[handleAlbumPalette] Palette received:', palette)
-      let albumColours = Object.keys(palette)
-        .filter(item => {
-          return item === null ? null : item
-        })
-        .map(colour => {
-          const bgHex = palette[colour].getHex()
-          let textColor = palette[colour].getTitleTextColor()
-
-          const brightness = this.calculateBrightness(bgHex)
-          const threshold = 150
-          if (brightness > threshold) {
-            textColor = '#000'
-          }
-
-          return {
-            text: textColor,
-            background: bgHex
-          }
-        })
-
-      this.swatches = albumColours
-      this.colourPalette =
-        albumColours[Math.floor(Math.random() * albumColours.length)]
-      console.log('[handleAlbumPalette] Randomly chosen palette color:', this.colourPalette)
-
+    handleImageLoad() {
+      console.log('[handleImageLoad] Album image loaded. Attempting text resize.')
       this.$nextTick(() => {
-        this.setAppColours()
+        this.resizeAllText()
       })
     },
 
-    /**
-     * Compute brightness for color picking.
-     */
-    calculateBrightness(hex) {
-      const c = hex.replace('#', '')
-      const rgb = parseInt(c, 16)
-      const r = (rgb >> 16) & 0xff
-      const g = (rgb >> 8) & 0xff
-      const b = (rgb >> 0) & 0xff
-      return 0.299 * r + 0.587 * g + 0.114 * b
-    },
-
-    /**
-     * Resize both track and artist text to fit.
-     */
     resizeAllText() {
       console.log('[resizeAllText] Resizing track and artist text.')
-      // Only call resizeTextToFit if refs are available:
+
       if (this.$refs.trackElement) {
         this.resizeTextToFit(this.$refs.trackElement, 84, 16)
       } else {
@@ -296,35 +173,135 @@ export default {
       }
     },
 
-    /**
-     * Dynamically resize text to fit its container.
-     */
     resizeTextToFit(el, initialSize, minSize) {
       if (!el) {
         console.warn('[resizeTextToFit] No element provided.')
         return
       }
 
-      const label = el === this.$refs.trackElement ? 'Track' : 'Artist'
-      const container = el.parentElement
+      const label =
+        el === this.$refs.trackElement ? 'Track' : 'Artist'
+
       let currentSize = initialSize
       el.style.fontSize = currentSize + 'px'
+      const container = el.parentElement
       console.log(`[resizeTextToFit] Starting ${label} font size at ${currentSize}px.`)
 
       while (
-        (el.scrollHeight > container.clientHeight || el.scrollWidth > container.clientWidth) &&
+        (el.scrollHeight > container.clientHeight ||
+          el.scrollWidth > container.clientWidth) &&
         currentSize > minSize
       ) {
         currentSize--
         el.style.fontSize = currentSize + 'px'
       }
 
-      console.log(`[resizeTextToFit] Final ${label} font size is ${currentSize}px (minSize was ${minSize}).`)
+      console.log(
+        `[resizeTextToFit] Final ${label} font size is ${currentSize}px (minSize was ${minSize}).`
+      )
     },
 
-    /**
-     * Handle expired or invalid Spotify token.
-     */
+    handleNowPlaying() {
+      console.log('[handleNowPlaying] Handling new playerResponse.')
+      if (
+        this.playerResponse.error?.status === 401 ||
+        this.playerResponse.error?.status === 400
+      ) {
+        console.warn('[handleNowPlaying] Token expired or invalid.')
+        this.handleExpiredToken()
+        return
+      }
+
+      if (this.playerResponse.is_playing === false) {
+        console.log('[handleNowPlaying] Player is idle.')
+        this.playerData = this.getEmptyPlayer()
+        return
+      }
+
+      // Skip if same track
+      if (this.playerResponse.item?.id === this.playerData.trackId) {
+        console.log('[handleNowPlaying] Same track ID as before. No update needed.')
+        return
+      }
+
+      console.log('[handleNowPlaying] New track detected. Updating local playerData.')
+      this.playerData = {
+        playing: this.playerResponse.is_playing,
+        trackArtists: this.playerResponse.item.artists.map(
+          artist => artist.name
+        ),
+        trackTitle: this.playerResponse.item.name,
+        trackId: this.playerResponse.item.id,
+        trackAlbum: {
+          title: this.playerResponse.item.album.name,
+          image: this.playerResponse.item.album.images[0].url
+        }
+      }
+    },
+
+    getAlbumColours() {
+      if (!this.player.trackAlbum?.image) {
+        console.log('[getAlbumColours] No album image found. Skipping color extraction.')
+        return
+      }
+
+      console.log('[getAlbumColours] Extracting album colors from image:', this.player.trackAlbum.image)
+      Vibrant.from(this.player.trackAlbum.image)
+        .quality(1)
+        .clearFilters()
+        .getPalette()
+        .then(palette => {
+          this.handleAlbumPalette(palette)
+        })
+        .catch(err => {
+          console.error('[getAlbumColours] Error extracting palette:', err)
+        })
+    },
+
+    handleAlbumPalette(palette) {
+      console.log('[handleAlbumPalette] Palette received:', palette)
+      const albumColours = Object.keys(palette)
+        .filter(item => item)
+        .map(colour => {
+          const bgHex = palette[colour].getHex()
+          let textColor = palette[colour].getTitleTextColor()
+          if (this.calculateBrightness(bgHex) > 150) {
+            textColor = '#000'
+          }
+          return { text: textColor, background: bgHex }
+        })
+
+      this.swatches = albumColours
+      this.colourPalette =
+        albumColours[Math.floor(Math.random() * albumColours.length)]
+      console.log('[handleAlbumPalette] Randomly chosen palette color:', this.colourPalette)
+
+      this.$nextTick(() => {
+        this.setAppColours()
+      })
+    },
+
+    calculateBrightness(hex) {
+      const c = hex.replace('#', '')
+      const rgb = parseInt(c, 16)
+      const r = (rgb >> 16) & 0xff
+      const g = (rgb >> 8) & 0xff
+      const b = (rgb >> 0) & 0xff
+      return 0.299 * r + 0.587 * g + 0.114 * b
+    },
+
+    setAppColours() {
+      console.log('[setAppColours] Setting text and background colors:', this.colourPalette)
+      document.documentElement.style.setProperty(
+        '--color-text-primary',
+        this.colourPalette.text
+      )
+      document.documentElement.style.setProperty(
+        '--colour-background-now-playing',
+        this.colourPalette.background
+      )
+    },
+
     handleExpiredToken() {
       console.log('[handleExpiredToken] Clearing interval and requesting token refresh.')
       clearInterval(this.pollPlaying)
@@ -333,10 +310,7 @@ export default {
   },
 
   watch: {
-    /**
-     * Watch auth changes.
-     */
-    auth: function(oldVal, newVal) {
+    auth(oldVal, newVal) {
       console.log('[watch:auth] Auth changed:', newVal)
       if (newVal.status === false) {
         console.log('[watch:auth] Auth status false. Clearing pollPlaying.')
@@ -344,21 +318,14 @@ export default {
       }
     },
 
-    /**
-     * Watch for new data from Spotify (raw playerResponse).
-     */
-    playerResponse: function() {
+    playerResponse() {
       console.log('[watch:playerResponse] playerResponse changed. Calling handleNowPlaying.')
       this.handleNowPlaying()
     },
 
-    /**
-     * Watch local playerData for changes.
-     */
-    playerData: function() {
+    playerData() {
       console.log('[watch:playerData] playerData changed:', this.playerData)
       this.$emit('spotifyTrackUpdated', this.playerData)
-
       this.$nextTick(() => {
         console.log('[watch:playerData] Attempting text resize and color extraction.')
         this.resizeAllText()
