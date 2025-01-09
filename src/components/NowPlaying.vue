@@ -321,10 +321,14 @@ export default {
     playerData: function() {
       this.$emit('spotifyTrackUpdated', this.playerData)
 
-      // After updating the track info, try resizing the text and extracting album colors
       this.$nextTick(() => {
-        this.resizeAllText()
-        this.getAlbumColours()
+        // Force reflow by reading offsetHeight:
+        const dummyHeight = this.$refs.trackElement?.offsetHeight
+
+        setTimeout(() => {
+          this.resizeAllText()
+          this.getAlbumColours()
+        }, 0)
       })
     }
   }
