@@ -2,8 +2,8 @@
  * Component: Now Playing.
  * -----------------------------------------------------------------------------
  * Styles for the 'Now Playing' screen.
+ *
  */
-
  .now-playing {
   background-color: var(--colour-background-now-playing);
   color: var(--color-text-primary);
@@ -12,7 +12,6 @@
   height: 100%;
   padding: var(--spacing-l);
   width: 100%;
-  overflow: hidden; /* Hide any unwanted scrollbars */
 
   &__cover,
   &__details {
@@ -36,25 +35,30 @@
     text-align: center;
   }
 
-  /* Dynamically scale the track title for longer text */
+  /* Allow multiline wrapping without breaking words */
   &__track {
     font-weight: var(--font-weight-heading);
-    /* clamp(min, preferred, max) ensures the text resizes automatically */
-    font-size: clamp(40px, 8vw, 84px);
-    white-space: nowrap;
+    font-size: 84px;
+
+    /* ADDED FOR MULTILINE WRAPPING AND NO OVERFLOW SCROLLBARS */
+    white-space: normal;
+    overflow-wrap: normal;
+    word-wrap: normal;
+    word-break: normal;
     overflow: hidden;
-    text-overflow: ellipsis;
-    display: block; /* or inline-block, but 'block' often simplifies spacing */
   }
 
-  /* Dynamically scale artist names for longer lists */
+  /* Same approach for artists */
   &__artists {
     opacity: 0.85;
-    font-size: clamp(32px, 7vw, 80px);
-    white-space: nowrap;
+    font-size: 80px;
+
+    /* ADDED FOR MULTILINE WRAPPING AND NO OVERFLOW SCROLLBARS */
+    white-space: normal;
+    overflow-wrap: normal;
+    word-wrap: normal;
+    word-break: normal;
     overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
   }
 
   &--active {
@@ -82,12 +86,5 @@
       width: 67%;
       text-align: left;
     }
-  }
-}
-
-/* Optional: Hide scrollbar everywhere in Chromium-based browsers */
-::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  display: none;
+  }  
 }
