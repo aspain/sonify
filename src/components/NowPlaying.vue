@@ -30,8 +30,8 @@
 </template>
 
 <script>
-import * as Vibrant from 'node-vibrant'
-import props from '@/utils/props.js'
+import * as Vibrant from 'node-vibrant';
+import props from '@/utils/props.js';
 
 export default {
   name: 'NowPlaying',
@@ -49,7 +49,7 @@ export default {
       playerData: this.getEmptyPlayer(),
       colourPalette: '',
       swatches: []
-    }
+    };
   },
 
   computed: {
@@ -58,7 +58,7 @@ export default {
      * @return {String}
      */
     getTrackArtists() {
-      return this.player.trackArtists.join(', ')
+      return this.player.trackArtists.join(', ');
     }
   },
 
