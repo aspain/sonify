@@ -62,8 +62,13 @@ export default {
   mounted() {
     console.log('[mounted] Component mounted. Setting data interval and resizing text.')
     this.setDataInterval()
+    // Guard check: only resize if the ref elements actually exist
     this.$nextTick(() => {
-      this.resizeAllText()
+      if (this.$refs.trackElement && this.$refs.artistElement) {
+        this.resizeAllText()
+      } else {
+        console.log('[mounted] trackElement or artistElement not found yet. Skipping resize.')
+      }
     })
   },
 
@@ -277,8 +282,18 @@ export default {
      */
     resizeAllText() {
       console.log('[resizeAllText] Resizing track and artist text.')
-      this.resizeTextToFit(this.$refs.trackElement, 84, 16)
-      this.resizeTextToFit(this.$refs.artistElement, 80, 16)
+      // Only call resizeTextToFit if refs are available:
+      if (this.$refs.trackElement) {
+        this.resizeTextToFit(this.$refs.trackElement, 84, 16)
+      } else {
+        console.log('[resizeAllText] trackElement ref not found.')
+      }
+
+      if (this.$refs.artistElement) {
+        this.resizeTextToFit(this.$refs.artistElement, 80, 16)
+      } else {
+        console.log('[resizeAllText] artistElement ref not found.')
+      }
     },
 
     /**
