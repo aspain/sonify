@@ -32,53 +32,48 @@
   }
 
   &__details {
+    /* Full height, flex column to split top and bottom */
     display: flex;
     flex-direction: column;
-    /* 
-     * We want to split the area into two flexible regions:
-     * top half for track, bottom half for artist.
-     */
-    height: 100%;
+    justify-content: space-between; 
     text-align: center;
+    height: 100%;
   }
 
   /* 
-   * Container that holds the track title at the bottom of the top half.
+   * The track region (top "half"), bottom-aligned.
+   * We'll let the container be flex, but the text inside is a normal block element.
    */
-  &__track-container {
-    flex: 1; /* occupy top half */
-    display: flex;
-    align-items: flex-end;  /* align track text to bottom of container */
-    justify-content: flex-start;
-    overflow: hidden; /* hide scrollbars if text happens to overflow */
-    position: relative;
-  }
-
-  /* 
-   * Container that holds the artist name at the top of the bottom half.
-   */
-  &__artist-container {
-    flex: 1; /* occupy bottom half */
-    display: flex;
-    align-items: flex-start; /* align artist text to top of container */
-    justify-content: flex-start;
-    overflow: hidden;
-    position: relative;
-  }
-
   &__track {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;  /* bottom of its container */
+    justify-content: flex-start;
     margin: 0;
-    font-weight: var(--font-weight-heading);
-    font-size: 84px;
-    white-space: normal;  /* allow multi-line wrapping */
-    word-break: break-word;
+    /* No direct font-size here, because we'll put actual text in a sub-element. */
   }
 
+  /* The actual text for the track */
+  &__track-text {
+    font-size: 84px;
+    margin: 0;
+    white-space: normal;   /* let text wrap */
+    word-break: break-word; 
+  }
+
+  /* 
+   * The artist region (bottom "half"), top-aligned.
+   * This was already working well in your original code.
+   */
   &__artists {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;    /* top of its container */
+    justify-content: flex-start;
     margin: 0;
     font-size: 80px;
     opacity: 0.85;
-    white-space: normal;  /* allow multi-line wrapping */
+    white-space: normal;
     word-break: break-word;
   }
 
@@ -95,14 +90,14 @@
 
   @media only screen and (min-width: 767px) {
     flex-flow: row nowrap;
-    padding: 2rem 4rem;
-
+    padding: 2rem 4rem; 
+  
     &__cover {
       width: 33%;
       max-width: 495px;
       text-align: center;
     }
-
+  
     &__details {
       width: 67%;
       text-align: left;
@@ -111,9 +106,9 @@
       justify-content: space-between;
       height: 100%;
     }
-
-    &__track-container,
-    &__artist-container {
+  
+    &__track,
+    &__artists {
       justify-content: flex-start;
     }
   }
