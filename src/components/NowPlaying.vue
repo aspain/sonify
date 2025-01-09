@@ -299,5 +299,5 @@ export default {
 }
 </script>
 
-<!-- Remove 'scoped' if you run into sizing issues with container detection -->
+<!-- Removed 'scoped' to ensure proper container sizing for dynamic text resizing -->
 <style src="@/styles/components/now-playing.scss" lang="scss"></style>
