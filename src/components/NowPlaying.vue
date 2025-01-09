@@ -64,7 +64,9 @@ export default {
   mounted() {
     this.setDataInterval()
     // Attempt text sizing once the component is mounted
-    this.$nextTick(this.resizeAllText);
+    this.$nextTick(() => {
+      this.resizeAllText()
+    })
   },
 
   beforeDestroy() {
@@ -209,10 +211,7 @@ export default {
           title: this.playerResponse.item.album.name,
           image: this.playerResponse.item.album.images[0].url
         }
-      };
-
-      // Call resizeAllText immediately after updating playerData
-      this.$nextTick(this.resizeAllText);
+      }
     },
 
     /**
@@ -262,8 +261,8 @@ export default {
      * Attempt to resize track and artist text to fit their containers.
      */
     resizeAllText() {
-      this.resizeTextToFit(this.$refs.trackElement, 84, 16);
-      this.resizeTextToFit(this.$refs.artistElement, 80, 16);
+      this.resizeTextToFit(this.$refs.trackElement, 84, 16)
+      this.resizeTextToFit(this.$refs.artistElement, 80, 16)
     },
 
     /**
@@ -273,20 +272,20 @@ export default {
      * @param {number} minSize        The smallest allowed font size (e.g. 16)
      */
     resizeTextToFit(el, initialSize, minSize) {
-      if (!el) return;
+      if (!el) return
 
       // The container is the parent (the "top half" or "bottom half" region).
-      const container = el.parentElement;
-      let currentSize = initialSize;
-      el.style.fontSize = currentSize + 'px';
+      const container = el.parentElement
+      let currentSize = initialSize
+      el.style.fontSize = currentSize + 'px'
 
       // Decrease size until it fits without causing scrollbars.
       while (
         (el.scrollHeight > container.clientHeight || el.scrollWidth > container.clientWidth) &&
         currentSize > minSize
       ) {
-        currentSize--;
-        el.style.fontSize = currentSize + 'px';
+        currentSize--
+        el.style.fontSize = currentSize + 'px'
       }
     },
 
@@ -314,6 +313,20 @@ export default {
      */
     playerResponse: function() {
       this.handleNowPlaying()
+    },
+
+    /**
+     * Watch our locally stored track data.
+     */
+    playerData() {
+      this.$emit('spotifyTrackUpdated', this.playerData)
+      this.$nextTick(() => {
+        // Small delay allows DOM reflow before measuring
+        setTimeout(() => {
+          this.resizeAllText()
+          this.getAlbumColours()
+        }, 50)
+      })
     }
   }
 }

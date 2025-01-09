@@ -32,17 +32,55 @@
   }
 
   &__details {
+    /* 
+     * Make this container a vertical flex container 
+     * that splits into two halves: 
+     * the top half for track title, the bottom half for artist. 
+     */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* spaces track and artist apart */
     text-align: center;
+    height: 100%;
   }
 
   &__track {
+    /* 
+     * Let track title occupy the top “half,” but align it to the bottom. 
+     */
+    flex: 1;
+    display: flex;
+    align-items: flex-end;     /* push text to bottom of region */
+    justify-content: flex-start; 
     font-weight: var(--font-weight-heading);
     font-size: 84px;
+    margin: 0;  /* remove default margins so alignment is precise */
+
+    /* 
+     * Allow wrapping without breaking words. 
+     * Multiple lines should be allowed to flow.
+     */
+    white-space: normal;
+    word-break: break-word;
   }
 
   &__artists {
+    /* 
+     * Occupies the bottom “half,” align to the top. 
+     */
+    flex: 1;
+    display: flex;
+    align-items: flex-start;   /* push text to top of region */
+    justify-content: flex-start;
     opacity: 0.85;
     font-size: 80px;
+    margin: 0;
+
+    /* 
+     * Similarly allow wrapping without truncation. 
+     */
+    white-space: normal;
+    word-break: break-word;
   }
 
   &--active {
@@ -58,17 +96,26 @@
 
   @media only screen and (min-width: 767px) {
     flex-flow: row nowrap;
-    padding: 2rem 4rem; 
-  
+    padding: 2rem 4rem;
+
     &__cover {
       width: 33%;
       max-width: 495px;
       text-align: center;
     }
-  
+
     &__details {
       width: 67%;
       text-align: left;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100%;
     }
-  }  
+
+    &__track,
+    &__artists {
+      justify-content: flex-start;
+    }
+  }
 }
