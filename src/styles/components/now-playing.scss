@@ -40,15 +40,18 @@
     font-weight: var(--font-weight-heading);
     font-size: 84px;
 
-    /* Allow multiline wrapping */
+    /* Let text wrap onto multiple lines */
     white-space: normal;
-    word-break: normal;
+    word-break: break-word;
     overflow-wrap: break-word;
 
-    /* Hide any scrollbars and define max space to detect overflow */
-    overflow: hidden;
-    max-height: 180px; /* Adjust this as desired */
-    margin: 0 auto;    /* Center if you like */
+    /* Don’t cap the height so text can expand downward */
+    max-height: none; /* or remove this line entirely */
+
+    /* The rest of your desired styles */
+    font-size: 84px; /* base size to start from */
+    display: block;  /* ensure it can expand in height */
+    margin: 0 auto;
   }
 
   /* ARTISTS STYLING */
@@ -56,15 +59,18 @@
     opacity: 0.85;
     font-size: 80px;
 
-    /* Allow multiline wrapping */
+    /* Let text wrap onto multiple lines */
     white-space: normal;
-    word-break: normal;
+    word-break: break-word;
     overflow-wrap: break-word;
 
-    /* Hide any scrollbars and define max space to detect overflow */
-    overflow: hidden;
-    max-height: 180px; /* Adjust this as desired */
-    margin: 0 auto;    /* Center if you like */
+    /* Don’t cap the height so text can expand downward */
+    max-height: none; /* or remove this line entirely */
+
+    /* The rest of your desired styles */
+    font-size: 84px; /* base size to start from */
+    display: block;  /* ensure it can expand in height */
+    margin: 0 auto;
   }
 
   &--active {

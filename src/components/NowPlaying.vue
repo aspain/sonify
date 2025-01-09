@@ -13,11 +13,11 @@
         />
       </div>
       <div class="now-playing__details">
-        <!-- Use refs for text elements to dynamically adjust font sizes -->
         <h1 class="now-playing__track" ref="trackTitle">{{ player.trackTitle }}</h1>
         <h2 class="now-playing__artists" ref="trackArtists">{{ getTrackArtists }}</h2>
       </div>
     </div>
+
     <div v-else class="now-playing" :class="getNowPlayingClass()">
       <h1 class="now-playing__idle-heading">No music is playing 😔</h1>
     </div>
@@ -39,7 +39,7 @@ export default {
 
   data() {
     return {
-      pollPlaying: '',
+      pollPlaying: null,
       playerResponse: {},
       playerData: this.getEmptyPlayer(),
       colourPalette: '',
@@ -48,10 +48,6 @@ export default {
   },
 
   computed: {
-    /**
-     * Return a comma-separated list of track artists.
-     * @return {String}
-     */
     getTrackArtists() {
       return this.player.trackArtists.join(', ')
     }
@@ -59,9 +55,9 @@ export default {
 
   mounted() {
     this.setDataInterval()
-    // Optionally run once at mount for an initial sizing check
+    // Just a one-time check at mount (if there's data)
     this.$nextTick(() => {
-      this.adjustTextSize()
+      this.adjustAllTextSizes()
     })
   },
 
@@ -70,10 +66,6 @@ export default {
   },
 
   methods: {
-    /**
-     * Make the network request to Spotify to
-     * get the current played track.
-     */
     async getNowPlaying() {
       let data = {}
 
@@ -97,7 +89,7 @@ export default {
 
           this.$nextTick(() => {
             this.$emit('spotifyTrackUpdated', data)
-            this.adjustTextSize() // check font once more
+            this.adjustAllTextSizes()
           })
           return
         }
@@ -112,7 +104,7 @@ export default {
 
         this.$nextTick(() => {
           this.$emit('spotifyTrackUpdated', data)
-          this.adjustTextSize() // check font once more
+          this.adjustAllTextSizes()
         })
       }
     },
@@ -123,9 +115,7 @@ export default {
     },
 
     getAlbumColours() {
-      if (!this.player.trackAlbum?.image) {
-        return
-      }
+      if (!this.player.trackAlbum?.image) return
       Vibrant.from(this.player.trackAlbum.image)
         .quality(1)
         .clearFilters()
@@ -177,6 +167,7 @@ export default {
         return
       }
 
+      // If track hasn't changed, no need to re-update
       if (this.playerResponse.item?.id === this.playerData.trackId) {
         return
       }
@@ -196,7 +187,7 @@ export default {
     },
 
     handleAlbumPalette(palette) {
-      let albumColours = Object.keys(palette)
+      const albumColours = Object.keys(palette)
         .filter(item => item != null)
         .map(colour => {
           const bgHex = palette[colour].getHex()
@@ -232,41 +223,61 @@ export default {
       return 0.299 * r + 0.587 * g + 0.114 * b
     },
 
-    /**
-     * Dynamically adjust the text size if it overflows the container's
-     * max-height (which we set in SCSS).
-     * We reset the font size each time so we always start from the base.
-     */
-    adjustTextSize() {
-      // We'll do this for both trackTitle and trackArtists
-      const refsToAdjust = [this.$refs.trackTitle, this.$refs.trackArtists]
-
-      refsToAdjust.forEach(el => {
-        if (!el) return
-
-        // Clear inline font-size so it reverts to what's in SCSS
-        el.style.fontSize = null
-
-        // Grab current computed font size
-        let fontSize = parseFloat(window.getComputedStyle(el).fontSize)
-
-        // As soon as we set the text, Vue might not have fully rendered it.
-        // We do a quick forced reflow by reading clientHeight:
-        // (Not always necessary, but can help ensure correct measurements.)
-        // eslint-disable-next-line no-unused-vars
-        const forceReflow = el.clientHeight
-
-        // If it's still overflowing, keep shrinking until it fits or hits a minimum
-        while (el.scrollHeight > el.clientHeight && fontSize > 20) {
-          fontSize -= 1
-          el.style.fontSize = fontSize + 'px'
-        }
-      })
-    },
-
     handleExpiredToken() {
       clearInterval(this.pollPlaying)
       this.$emit('requestRefreshToken')
+    },
+
+    /** 
+     * Adjust text sizes for trackTitle and trackArtists 
+     * so they don't overflow their parent container.
+     */
+    adjustAllTextSizes() {
+      this.$nextTick(() => {
+        this.fitTextToContainer(this.$refs.trackTitle, 24, 84)
+        this.fitTextToContainer(this.$refs.trackArtists, 24, 80)
+      })
+    },
+
+    /**
+     * A binary-search approach to find the largest font size 
+     * that doesn't overflow the element's parent container.
+     */
+    fitTextToContainer(el, minFont, maxFont) {
+      if (!el || !el.parentElement) return
+
+      // 1) Clear any inline font-size from a previous track
+      el.style.fontSize = ''
+
+      // 2) Save the parent’s size for reference
+      const parentRect = el.parentElement.getBoundingClientRect()
+
+      // 3) A helper to check if the text overflows horizontally or vertically
+      const isOverflowing = fontPx => {
+        el.style.fontSize = fontPx + 'px'
+        const rect = el.getBoundingClientRect()
+        return (rect.width > parentRect.width || rect.height > parentRect.height)
+      }
+
+      // 4) Binary search from minFont..maxFont
+      let low = minFont
+      let high = maxFont
+      let bestFit = low
+
+      while (low <= high) {
+        const mid = Math.floor((low + high) / 2)
+        if (isOverflowing(mid)) {
+          // Too big
+          high = mid - 1
+        } else {
+          // Fits, record it, try bigger
+          bestFit = mid
+          low = mid + 1
+        }
+      }
+
+      // 5) Apply the best fit
+      el.style.fontSize = bestFit + 'px'
     }
   },
 
@@ -280,16 +291,15 @@ export default {
       this.handleNowPlaying()
     },
     /**
-     * Each time the track changes, we call adjustTextSize().
-     * That ensures we re-check for overflow if the new track has
-     * different lengths of title/artist.
+     * Each time we get a new track, 
+     * re-check the text sizes so each new track can start big 
+     * and shrink if necessary.
      */
     playerData() {
       this.$emit('spotifyTrackUpdated', this.playerData)
-
       this.$nextTick(() => {
         this.getAlbumColours()
-        this.adjustTextSize()
+        this.adjustAllTextSizes()
       })
     }
   }
