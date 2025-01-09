@@ -2,7 +2,6 @@
  * Component: Now Playing.
  * -----------------------------------------------------------------------------
  * Styles for the 'Now Playing' screen.
- *
  */
  .now-playing {
   background-color: var(--colour-background-now-playing);
@@ -32,53 +31,37 @@
   }
 
   &__details {
-    /* 
-     * Make this container a vertical flex container 
-     * that splits into two halves: 
-     * the top half for track title, the bottom half for artist. 
-     */
     display: flex;
     flex-direction: column;
-    justify-content: space-between; /* spaces track and artist apart */
+    justify-content: space-between;
     text-align: center;
     height: 100%;
   }
 
   &__track {
-    /* 
-     * Let track title occupy the top “half,” but align it to the bottom. 
-     */
     flex: 1;
     display: flex;
-    align-items: flex-end;     /* push text to bottom of region */
-    justify-content: flex-start; 
+    align-items: flex-end; /* push text to bottom of region */
+    justify-content: flex-start;
     font-weight: var(--font-weight-heading);
     font-size: 84px;
-    margin: 0;  /* remove default margins so alignment is precise */
+    margin: 0; /* remove default margins so alignment is precise */
 
-    /* 
-     * Allow wrapping without breaking words. 
-     * Multiple lines should be allowed to flow.
-     */
+    /* Allow wrapping. */
     white-space: normal;
     word-break: break-word;
   }
 
   &__artists {
-    /* 
-     * Occupies the bottom “half,” align to the top. 
-     */
     flex: 1;
     display: flex;
-    align-items: flex-start;   /* push text to top of region */
+    align-items: flex-start; /* push text to top of region */
     justify-content: flex-start;
     opacity: 0.85;
     font-size: 80px;
     margin: 0;
 
-    /* 
-     * Similarly allow wrapping without truncation. 
-     */
+    /* Similarly allow wrapping. */
     white-space: normal;
     word-break: break-word;
   }
