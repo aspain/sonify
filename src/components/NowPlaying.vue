@@ -64,7 +64,7 @@ export default {
   mounted() {
     this.setDataInterval()
     // Attempt text sizing once the component is mounted
-    this.$nextTick(this.resizeAllText); // Ensure initial sizing
+    this.$nextTick(this.resizeAllText);
   },
 
   beforeDestroy() {
@@ -77,7 +77,6 @@ export default {
      * get the current played track.
      */
     async getNowPlaying() {
-      // ... (your existing getNowPlaying method)
       let data = {}
 
       try {
@@ -210,7 +209,10 @@ export default {
           title: this.playerResponse.item.album.name,
           image: this.playerResponse.item.album.images[0].url
         }
-      }
+      };
+
+      // Call resizeAllText immediately after updating playerData
+      this.$nextTick(this.resizeAllText);
     },
 
     /**
@@ -312,19 +314,6 @@ export default {
      */
     playerResponse: function() {
       this.handleNowPlaying()
-    },
-
-    /**
-     * Watch our locally stored track data.
-     */
-    playerData: function() {
-      this.$emit('spotifyTrackUpdated', this.playerData);
-
-      // After updating the track info, try resizing the text and extracting album colors
-      this.$nextTick(() => {
-        this.resizeAllText();
-        this.getAlbumColours();
-      });
     }
   }
 }
