@@ -13,13 +13,10 @@
         />
       </div>
       <div class="now-playing__details">
-        <!-- The track container is a flex box, the text is in a sub-element -->
-        <h1 class="now-playing__track">
-          <span ref="trackElement" class="now-playing__track-text">
-            {{ player.trackTitle }}
-          </span>
+        <!-- Give these elements refs for resizing logic -->
+        <h1 ref="trackElement" class="now-playing__track">
+          {{ player.trackTitle }}
         </h1>
-        <!-- Artist section remains the same -->
         <h2 ref="artistElement" class="now-playing__artists">
           {{ getTrackArtists }}
         </h2>
@@ -57,6 +54,7 @@ export default {
   computed: {
     /**
      * Return a comma-separated list of track artists.
+     * @return {String}
      */
     getTrackArtists() {
       return this.player.trackArtists.join(', ')
@@ -65,6 +63,7 @@ export default {
 
   mounted() {
     this.setDataInterval()
+    // Attempt text sizing once the component is mounted
     this.$nextTick(() => {
       this.resizeAllText()
     })
@@ -76,7 +75,8 @@ export default {
 
   methods: {
     /**
-     * Poll Spotify for the current track.
+     * Make the network request to Spotify to
+     * get the current played track.
      */
     async getNowPlaying() {
       let data = {}
@@ -94,6 +94,7 @@ export default {
         if (!response.ok) {
           throw new Error(`An error has occured: ${response.status}`)
         }
+
         if (response.status === 204) {
           data = this.getEmptyPlayer()
           this.playerData = data
@@ -116,7 +117,8 @@ export default {
     },
 
     /**
-     * Return a class for the container
+     * Get the Now Playing element class.
+     * @return {String}
      */
     getNowPlayingClass() {
       const playerClass = this.player.playing ? 'active' : 'idle'
@@ -124,7 +126,7 @@ export default {
     },
 
     /**
-     * Extract album colours using Vibrant
+     * Get the colour palette from the album cover.
      */
     getAlbumColours() {
       if (!this.player.trackAlbum?.image) {
@@ -140,7 +142,8 @@ export default {
     },
 
     /**
-     * Return an empty player object for "no track playing."
+     * Return a formatted empty object for an idle player.
+     * @return {Object}
      */
     getEmptyPlayer() {
       return {
@@ -153,7 +156,7 @@ export default {
     },
 
     /**
-     * Poll Spotify on an interval
+     * Poll Spotify for data.
      */
     setDataInterval() {
       clearInterval(this.pollPlaying)
@@ -163,7 +166,7 @@ export default {
     },
 
     /**
-     * Update CSS variables based on the chosen colour palette.
+     * Set the stylings of the app based on received colours.
      */
     setAppColours() {
       document.documentElement.style.setProperty(
@@ -177,11 +180,13 @@ export default {
     },
 
     /**
-     * React to new track data from Spotify
+     * Handle newly updated Spotify Tracks.
      */
     handleNowPlaying() {
-      const errStatus = this.playerResponse.error?.status
-      if (errStatus === 401 || errStatus === 400) {
+      if (
+        this.playerResponse.error?.status === 401 ||
+        this.playerResponse.error?.status === 400
+      ) {
         this.handleExpiredToken()
         return
       }
@@ -197,7 +202,9 @@ export default {
 
       this.playerData = {
         playing: this.playerResponse.is_playing,
-        trackArtists: this.playerResponse.item.artists.map(a => a.name),
+        trackArtists: this.playerResponse.item.artists.map(
+          artist => artist.name
+        ),
         trackTitle: this.playerResponse.item.name,
         trackId: this.playerResponse.item.id,
         trackAlbum: {
@@ -208,18 +215,23 @@ export default {
     },
 
     /**
-     * Generate palette from Vibrant
+     * Handle newly stored colour palette.
      */
     handleAlbumPalette(palette) {
       let albumColours = Object.keys(palette)
-        .filter(Boolean)
+        .filter(item => {
+          return item === null ? null : item
+        })
         .map(colour => {
           const bgHex = palette[colour].getHex()
           let textColor = palette[colour].getTitleTextColor()
+
           const brightness = this.calculateBrightness(bgHex)
-          if (brightness > 150) {
+          const threshold = 150
+          if (brightness > threshold) {
             textColor = '#000'
           }
+
           return {
             text: textColor,
             background: bgHex
@@ -235,9 +247,7 @@ export default {
       })
     },
 
-    /**
-     * Basic brightness calculation
-     */
+    // Helper function to compute brightness for color palette usage
     calculateBrightness(hex) {
       const c = hex.replace('#', '')
       const rgb = parseInt(c, 16)
@@ -248,33 +258,39 @@ export default {
     },
 
     /**
-     * Called after each track update
+     * Attempt to resize track and artist text to fit their containers.
      */
     resizeAllText() {
-      // Tweak initialSize/minSize as desired
       this.resizeTextToFit(this.$refs.trackElement, 84, 16)
       this.resizeTextToFit(this.$refs.artistElement, 80, 16)
     },
 
     /**
-     * Decrement font size until no scroll is required
+     * Dynamically resize text until it fits the container’s dimensions without scrolling.
+     * @param {HTMLElement} el        The element whose text needs resizing
+     * @param {number} initialSize    The starting font size (e.g. 84)
+     * @param {number} minSize        The smallest allowed font size (e.g. 16)
      */
     resizeTextToFit(el, initialSize, minSize) {
       if (!el) return
-      let currentSize = initialSize
-      el.style.fontSize = `${currentSize}px`
 
+      // The container is the parent (the "top half" or "bottom half" region).
+      const container = el.parentElement
+      let currentSize = initialSize
+      el.style.fontSize = currentSize + 'px'
+
+      // Decrease size until it fits without causing scrollbars.
       while (
-        (el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth) &&
+        (el.scrollHeight > container.clientHeight || el.scrollWidth > container.clientWidth) &&
         currentSize > minSize
       ) {
         currentSize--
-        el.style.fontSize = `${currentSize}px`
+        el.style.fontSize = currentSize + 'px'
       }
     },
 
     /**
-     * Handle an expired token from Spotify
+     * Handle an expired access token from Spotify.
      */
     handleExpiredToken() {
       clearInterval(this.pollPlaying)
@@ -283,16 +299,29 @@ export default {
   },
 
   watch: {
+    /**
+     * Watch the auth object returned from Spotify.
+     */
     auth: function(oldVal, newVal) {
       if (newVal.status === false) {
         clearInterval(this.pollPlaying)
       }
     },
-    playerResponse() {
+
+    /**
+     * Watch the returned track object.
+     */
+    playerResponse: function() {
       this.handleNowPlaying()
     },
-    playerData() {
+
+    /**
+     * Watch our locally stored track data.
+     */
+    playerData: function() {
       this.$emit('spotifyTrackUpdated', this.playerData)
+
+      // After updating the track info, try resizing the text and extracting album colors
       this.$nextTick(() => {
         this.resizeAllText()
         this.getAlbumColours()
