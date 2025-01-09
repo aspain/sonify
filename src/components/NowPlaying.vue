@@ -44,12 +44,12 @@ export default {
 
   data() {
     return {
-      pollPlaying: '',
+      pollPlaying: null,
       playerResponse: {},
       playerData: this.getEmptyPlayer(),
       colourPalette: '',
       swatches: [],
-      // A key to force re-render whenever the track changes significantly.
+      // A key to force re-render whenever the track changes significantly
       renderKey: 0
     }
   },
@@ -65,7 +65,7 @@ export default {
 
   mounted() {
     this.setDataInterval()
-    // Attempt text sizing once the component is mounted
+    // Attempt text sizing once mounted
     this.$nextTick(() => {
       this.resizeAllText()
     })
@@ -77,18 +77,28 @@ export default {
 
   methods: {
     /**
-     * Fired whenever the album cover image finishes loading.
-     * Ensures container dimensions are correct before resizing text.
+     * Fired whenever the album cover finishes loading.
+     * Ensures container dimensions are updated before resizing text.
      */
     onCoverImageLoaded() {
-      this.$nextTick(() => {
+      // A short delay ensures the browser has updated layout before measuring
+      requestAnimationFrame(() => {
         this.resizeAllText()
       })
     },
 
     /**
-     * Make the network request to Spotify to
-     * get the current played track.
+     * Poll Spotify for data.
+     */
+    setDataInterval() {
+      clearInterval(this.pollPlaying)
+      this.pollPlaying = setInterval(() => {
+        this.getNowPlaying()
+      }, 2500)
+    },
+
+    /**
+     * Make the network request to Spotify for the current track.
      */
     async getNowPlaying() {
       let data = {}
@@ -106,6 +116,7 @@ export default {
           throw new Error(`An error has occured: ${response.status}`)
         }
 
+        // No content means nothing is playing
         if (response.status === 204) {
           data = this.getEmptyPlayer()
           this.playerData = data
@@ -118,6 +129,7 @@ export default {
         data = await response.json()
         this.playerResponse = data
       } catch (error) {
+        // Likely an expired token
         this.handleExpiredToken()
         data = this.getEmptyPlayer()
         this.playerData = data
@@ -127,24 +139,17 @@ export default {
       }
     },
 
+    /**
+     * Return the appropriate class for now-playing state.
+     */
     getNowPlayingClass() {
       const playerClass = this.player.playing ? 'active' : 'idle'
       return `now-playing--${playerClass}`
     },
 
-    getAlbumColours() {
-      if (!this.player.trackAlbum?.image) {
-        return
-      }
-      Vibrant.from(this.player.trackAlbum.image)
-        .quality(1)
-        .clearFilters()
-        .getPalette()
-        .then(palette => {
-          this.handleAlbumPalette(palette)
-        })
-    },
-
+    /**
+     * Generate a default, “nothing playing” object.
+     */
     getEmptyPlayer() {
       return {
         playing: false,
@@ -155,25 +160,19 @@ export default {
       }
     },
 
-    setDataInterval() {
+    /**
+     * Handle token expiration.
+     */
+    handleExpiredToken() {
       clearInterval(this.pollPlaying)
-      this.pollPlaying = setInterval(() => {
-        this.getNowPlaying()
-      }, 2500)
+      this.$emit('requestRefreshToken')
     },
 
-    setAppColours() {
-      document.documentElement.style.setProperty(
-        '--color-text-primary',
-        this.colourPalette.text
-      )
-      document.documentElement.style.setProperty(
-        '--colour-background-now-playing',
-        this.colourPalette.background
-      )
-    },
-
+    /**
+     * Process newly-fetched data from Spotify.
+     */
     handleNowPlaying() {
+      // If Spotify says our token is invalid
       if (
         this.playerResponse.error?.status === 401 ||
         this.playerResponse.error?.status === 400
@@ -182,17 +181,18 @@ export default {
         return
       }
 
+      // If nothing is playing
       if (this.playerResponse.is_playing === false) {
         this.playerData = this.getEmptyPlayer()
         return
       }
 
-      // If it's still the same track, do nothing
+      // If it's the same track, do nothing
       if (this.playerResponse.item?.id === this.playerData.trackId) {
         return
       }
 
-      // Otherwise, update
+      // Otherwise, store the new track
       this.playerData = {
         playing: this.playerResponse.is_playing,
         trackArtists: this.playerResponse.item.artists.map(artist => artist.name),
@@ -205,12 +205,27 @@ export default {
       }
     },
 
+    /**
+     * Extract color palette from album cover.
+     */
+    getAlbumColours() {
+      if (!this.player.trackAlbum?.image) return
+
+      Vibrant.from(this.player.trackAlbum.image)
+        .quality(1)
+        .clearFilters()
+        .getPalette()
+        .then(palette => {
+          this.handleAlbumPalette(palette)
+        })
+    },
+
     handleAlbumPalette(palette) {
-      let albumColours = Object.keys(palette)
-        .filter(item => item)
-        .map(colour => {
-          const bgHex = palette[colour].getHex()
-          let textColor = palette[colour].getTitleTextColor()
+      const albumColours = Object.keys(palette)
+        .filter(Boolean)
+        .map(key => {
+          const bgHex = palette[key].getHex()
+          let textColor = palette[key].getTitleTextColor()
 
           const brightness = this.calculateBrightness(bgHex)
           const threshold = 150
@@ -233,20 +248,42 @@ export default {
       })
     },
 
+    setAppColours() {
+      document.documentElement.style.setProperty(
+        '--color-text-primary',
+        this.colourPalette.text
+      )
+      document.documentElement.style.setProperty(
+        '--colour-background-now-playing',
+        this.colourPalette.background
+      )
+    },
+
+    /**
+     * Calculates brightness so we can pick black/white text automatically.
+     */
     calculateBrightness(hex) {
       const c = hex.replace('#', '')
       const rgb = parseInt(c, 16)
       const r = (rgb >> 16) & 0xff
       const g = (rgb >> 8) & 0xff
-      const b = (rgb >> 0) & 0xff
+      const b = rgb & 0xff
       return 0.299 * r + 0.587 * g + 0.114 * b
     },
 
+    /**
+     * Resize both track & artist text to fit their containers.
+     */
     resizeAllText() {
+      // `Log`s for debugging
+      console.log('Resizing text...')
       this.resizeTextToFit(this.$refs.trackElement, 84, 16)
       this.resizeTextToFit(this.$refs.artistElement, 80, 16)
     },
 
+    /**
+     * Resize until it fits the container without overflowing.
+     */
     resizeTextToFit(el, initialSize, minSize) {
       if (!el) return
       const container = el.parentElement
@@ -261,45 +298,52 @@ export default {
         currentSize--
         el.style.fontSize = currentSize + 'px'
       }
-    },
-
-    handleExpiredToken() {
-      clearInterval(this.pollPlaying)
-      this.$emit('requestRefreshToken')
     }
   },
 
   watch: {
-    auth(newVal) {
-      if (newVal.status === false) {
-        clearInterval(this.pollPlaying)
-      }
-    },
-
+    /**
+     * Whenever Spotify’s response object changes
+     */
     playerResponse() {
       this.handleNowPlaying()
     },
 
+    /**
+     * Our local track data changes whenever handleNowPlaying updates it
+     */
     playerData: {
       immediate: true,
       handler(newVal, oldVal) {
-        // Emit so parent knows about changes
-        this.$emit('spotifyTrackUpdated', this.playerData)
-        // Once data changes, resize text & fetch palette
-        this.$nextTick(() => {
-          this.resizeAllText()
-          this.getAlbumColours()
-        })
+        // Let parent know
+        this.$emit('spotifyTrackUpdated', newVal)
 
-        // Force a re-render if the track ID has changed
+        // If track changed, force re-render
         if (newVal.trackId && oldVal && newVal.trackId !== oldVal.trackId) {
           this.renderKey++
         }
+
+        // Wait a moment for DOM updates, then resize text & get palette
+        this.$nextTick(() => {
+          setTimeout(() => {
+            this.resizeAllText()
+            this.getAlbumColours()
+          }, 50)
+        })
+      }
+    },
+
+    /**
+     * If our token becomes invalid, stop polling
+     */
+    auth(newVal) {
+      if (newVal.status === false) {
+        clearInterval(this.pollPlaying)
       }
     }
   }
 }
 </script>
 
-<!-- Remove 'scoped' so container sizing is reliable -->
+<!-- No 'scoped' to ensure accurate container sizing -->
 <style src="@/styles/components/now-playing.scss" lang="scss"></style>
