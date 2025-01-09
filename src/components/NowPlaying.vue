@@ -322,8 +322,8 @@ export default {
       this.$emit('spotifyTrackUpdated', this.playerData)
 
       this.$nextTick(() => {
-        // Force reflow by reading offsetHeight:
-        const dummyHeight = this.$refs.trackElement?.offsetHeight
+        // Force reflow by reading offsetHeight (no assignment needed)
+        void this.$refs.trackElement?.offsetHeight
 
         setTimeout(() => {
           this.resizeAllText()
