@@ -1,4 +1,10 @@
-.now-playing {
+/**
+ * Component: Now Playing.
+ * -----------------------------------------------------------------------------
+ * Styles for the 'Now Playing' screen.
+ *
+ */
+ .now-playing {
   background-color: var(--colour-background-now-playing);
   color: var(--color-text-primary);
   display: flex;
@@ -19,7 +25,7 @@
   }
 
   &__image {
-    box-shadow: 1px 1px 16px -2px rgba(0, 0, 0, 0.3);
+    box-shadow: 1px 1px 16px -2px rgba(0, 0, 0, .3);
     height: auto;
     max-width: 60vw;
     width: 100%;
@@ -27,37 +33,34 @@
 
   &__details {
     text-align: center;
-    padding-right: calc(var(--spacing-m) - 15px); /* Increased subtraction to reduce padding */
   }
 
   /* Truncate long track titles with ellipses once container is filled (3 lines) */
   &__track {
     font-weight: var(--font-weight-heading);
-    font-size: 84px;
-    line-height: 1;
+    font-size: 82px;
+    line-height: 1; /* Decrease line-height to reduce spacing between lines */
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-height: calc(84px * 3);
+    max-height: calc(82px * 3); /* 3 lines total */
     word-wrap: break-word;
-    padding-right: 5px; /* Reduced right padding */
   }
 
   /* Truncate long artist names with ellipses once container is filled (3 lines) */
   &__artists {
     opacity: 0.85;
-    font-size: 80px;
+    font-size: 78px;
     line-height: 1;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-height: calc(80px * 3);
+    max-height: calc(78px * 3); /* 3 lines total */
     word-wrap: break-word;
-    padding-right: 5px; /* Reduced right padding */
   }
 
   &--active {
@@ -74,17 +77,16 @@
   @media only screen and (min-width: 767px) {
     flex-flow: row nowrap;
     padding: 2rem 4rem; 
-
+  
     &__cover {
       width: 33%;
       max-width: 495px;
       text-align: center;
     }
-
+  
     &__details {
       width: 67%;
       text-align: left;
-      padding-right: calc(var(--spacing-m) - 15px); /* Ensure media query also adjusts padding */
     }
   }  
 }
