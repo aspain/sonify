@@ -39,7 +39,7 @@
   &__track {
     font-weight: var(--font-weight-heading);
     font-size: 82px;
-    line-height: 1; /* Decrease line-height to reduce spacing between lines */
+    line-height: .9; /* Decrease line-height to reduce spacing between lines */
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
@@ -53,7 +53,7 @@
   &__artists {
     opacity: 0.85;
     font-size: 78px;
-    line-height: 1;
+    line-height: .9;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
