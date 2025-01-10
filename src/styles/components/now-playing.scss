@@ -35,14 +35,34 @@
     text-align: center;
   }
 
+  /* Truncate long track titles with ellipses once container is filled */
   &__track {
     font-weight: var(--font-weight-heading);
     font-size: 84px;
+    /* Controls multiline overflow/ellipses */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3; /* show up to 3 lines, then truncate */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-wrap: break-word;
+    max-height: 4.2em; /* roughly 3 lines of 1.4 line-height */
+    line-height: 1.4;
   }
 
+  /* Truncate long artist names with ellipses once container is filled */
   &__artists {
     opacity: 0.85;
     font-size: 80px;
+    /* Controls multiline overflow/ellipses */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2; /* show up to 2 lines, then truncate */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-wrap: break-word;
+    max-height: 3.2em; /* roughly 2 lines of 1.6 line-height */
+    line-height: 1.6;
   }
 
   &--active {
