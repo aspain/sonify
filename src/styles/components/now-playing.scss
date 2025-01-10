@@ -1,10 +1,4 @@
-/**
- * Component: Now Playing.
- * -----------------------------------------------------------------------------
- * Styles for the 'Now Playing' screen.
- *
- */
- .now-playing {
+.now-playing {
   background-color: var(--colour-background-now-playing);
   color: var(--color-text-primary);
   display: flex;
@@ -32,24 +26,23 @@
   }
 
   &__details {
-    padding: var(--spacing-m); /* Existing padding */
-    padding-right: calc(var(--spacing-m) - 10px); /* Reduce right padding by 10px */
     text-align: center;
-    width: 100%;
-  }  
+    padding-right: calc(var(--spacing-m) - 10px); /* Adjusted right padding */
+  }
 
   /* Truncate long track titles with ellipses once container is filled (3 lines) */
   &__track {
     font-weight: var(--font-weight-heading);
     font-size: 84px;
-    line-height: 1; /* Decrease line-height to reduce spacing between lines */
+    line-height: 1;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-height: calc(84px * 3); /* 3 lines total */
+    max-height: calc(84px * 3);
     word-wrap: break-word;
+    padding-right: 10px; /* Optional: Further adjust right padding */
   }
 
   /* Truncate long artist names with ellipses once container is filled (3 lines) */
@@ -62,8 +55,9 @@
     -webkit-line-clamp: 3;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-height: calc(80px * 3); /* 3 lines total */
+    max-height: calc(80px * 3);
     word-wrap: break-word;
+    padding-right: 10px; /* Optional: Further adjust right padding */
   }
 
   &--active {
@@ -80,16 +74,17 @@
   @media only screen and (min-width: 767px) {
     flex-flow: row nowrap;
     padding: 2rem 4rem; 
-  
+
     &__cover {
       width: 33%;
       max-width: 495px;
       text-align: center;
     }
-  
+
     &__details {
       width: 67%;
       text-align: left;
+      padding-right: calc(var(--spacing-m) - 10px); /* Ensure media query also adjusts padding */
     }
   }  
 }
