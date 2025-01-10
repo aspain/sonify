@@ -10,12 +10,12 @@
   display: flex;
   flex-flow: column nowrap;
   height: 100%;
-  padding: var(--spacing-l); // Overall padding
+  padding: var(--spacing-l);
   width: 100%;
 
   &__cover,
   &__details {
-    padding: var(--spacing-m); // Padding for cover and details
+    padding: var(--spacing-m);
     text-align: center;
     width: 100%;
   }
@@ -25,28 +25,30 @@
   }
 
   &__image {
-    box-shadow: 1px 1px 16px -2px rgba(0, 0, 0, 0.3);
+    box-shadow: 1px 1px 16px -2px rgba(0, 0, 0, .3);
     height: auto;
     max-width: 60vw;
     width: 100%;
   }
 
   &__details {
+    padding: var(--spacing-m); /* Existing padding */
+    padding-right: calc(var(--spacing-m) - 10px); /* Reduce right padding by 10px */
     text-align: center;
-    padding: var(--spacing-m) 1rem; // Adjusted padding: top/bottom | left/right
-  }
+    width: 100%;
+  }  
 
   /* Truncate long track titles with ellipses once container is filled (3 lines) */
   &__track {
     font-weight: var(--font-weight-heading);
     font-size: 84px;
-    line-height: 1.2; // Adjusted line-height for better spacing
+    line-height: 1; /* Decrease line-height to reduce spacing between lines */
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-height: calc(84px * 1.2 * 3); // 3 lines with adjusted line-height
+    max-height: calc(84px * 3); /* 3 lines total */
     word-wrap: break-word;
   }
 
@@ -54,13 +56,13 @@
   &__artists {
     opacity: 0.85;
     font-size: 80px;
-    line-height: 1.2; // Adjusted line-height for better spacing
+    line-height: 1;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-height: calc(80px * 1.2 * 3); // 3 lines with adjusted line-height
+    max-height: calc(80px * 3); /* 3 lines total */
     word-wrap: break-word;
   }
 
@@ -77,19 +79,17 @@
 
   @media only screen and (min-width: 767px) {
     flex-flow: row nowrap;
-    padding: 2rem 2rem; // Reduced horizontal padding
-
+    padding: 2rem 4rem; 
+  
     &__cover {
       width: 33%;
       max-width: 495px;
       text-align: center;
-      padding: var(--spacing-m) 1rem; // Adjusted padding
     }
-
+  
     &__details {
       width: 67%;
       text-align: left;
-      padding: var(--spacing-m) 1rem; // Adjusted padding
     }
-  }
+  }  
 }

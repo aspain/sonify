@@ -25,6 +25,7 @@
 
 <script>
 import * as Vibrant from 'node-vibrant'
+
 import props from '@/utils/props.js'
 
 export default {
@@ -49,6 +50,7 @@ export default {
   computed: {
     /**
      * Return a comma-separated list of track artists.
+     * @return {String}
      */
     getTrackArtists() {
       return this.player.trackArtists.join(', ')
@@ -81,16 +83,25 @@ export default {
           }
         )
 
+        /**
+         * Fetch error.
+         */
         if (!response.ok) {
           throw new Error(`An error has occured: ${response.status}`)
         }
 
+        /**
+         * Spotify returns a 204 when no current device session is found.
+         * The connection was successful but there's no content to return.
+         */
         if (response.status === 204) {
           data = this.getEmptyPlayer()
           this.playerData = data
+
           this.$nextTick(() => {
             this.$emit('spotifyTrackUpdated', data)
           })
+
           return
         }
 
@@ -98,8 +109,10 @@ export default {
         this.playerResponse = data
       } catch (error) {
         this.handleExpiredToken()
+
         data = this.getEmptyPlayer()
         this.playerData = data
+
         this.$nextTick(() => {
           this.$emit('spotifyTrackUpdated', data)
         })
@@ -108,6 +121,7 @@ export default {
 
     /**
      * Get the Now Playing element class.
+     * @return {String}
      */
     getNowPlayingClass() {
       const playerClass = this.player.playing ? 'active' : 'idle'
@@ -118,10 +132,16 @@ export default {
      * Get the colour palette from the album cover.
      */
     getAlbumColours() {
+      /**
+       * No image (rare).
+       */
       if (!this.player.trackAlbum?.image) {
         return
       }
 
+      /**
+       * Run node-vibrant to get colours.
+       */
       Vibrant.from(this.player.trackAlbum.image)
         .quality(1)
         .clearFilters()
@@ -133,6 +153,7 @@ export default {
 
     /**
      * Return a formatted empty object for an idle player.
+     * @return {Object}
      */
     getEmptyPlayer() {
       return {
@@ -162,6 +183,7 @@ export default {
         '--color-text-primary',
         this.colourPalette.text
       )
+
       document.documentElement.style.setProperty(
         '--colour-background-now-playing',
         this.colourPalette.background
@@ -177,18 +199,30 @@ export default {
         this.playerResponse.error?.status === 400
       ) {
         this.handleExpiredToken()
+
         return
       }
 
+      /**
+       * Player is active, but user has paused.
+       */
       if (this.playerResponse.is_playing === false) {
         this.playerData = this.getEmptyPlayer()
+
         return
       }
 
+      /**
+       * The newly fetched track is the same as our stored
+       * one, we don't want to update the DOM yet.
+       */
       if (this.playerResponse.item?.id === this.playerData.trackId) {
         return
       }
 
+      /**
+       * Store the current active track.
+       */
       this.playerData = {
         playing: this.playerResponse.is_playing,
         trackArtists: this.playerResponse.item.artists.map(
@@ -215,12 +249,17 @@ export default {
         })
         .map(colour => {
           const bgHex = palette[colour].getHex()
+          // Optionally use Vibrant's getTitleTextColor()
+          // but override if brightness is above our threshold:
           let textColor = palette[colour].getTitleTextColor()
+
+          // Calculate brightness & adjust text color if needed
           const brightness = this.calculateBrightness(bgHex)
-          const threshold = 150
+          const threshold = 150 // Increase to get black text more often
           if (brightness > threshold) {
-            textColor = '#000'
+            textColor = '#000' // Force black if background is "too light"
           }
+
           return {
             text: textColor,
             background: bgHex
@@ -236,15 +275,17 @@ export default {
       })
     },
 
-    /**
-     * Compute brightness value for a given HEX color.
-     */
+    // Add a helper function to compute brightness
     calculateBrightness(hex) {
+      // Remove '#' if present
       const c = hex.replace('#', '')
+      // Convert to RGB
       const rgb = parseInt(c, 16)
       const r = (rgb >> 16) & 0xff
       const g = (rgb >> 8) & 0xff
       const b = (rgb >> 0) & 0xff
+
+      // Formula for perceived brightness
       return 0.299 * r + 0.587 * g + 0.114 * b
     },
 
@@ -256,20 +297,29 @@ export default {
       this.$emit('requestRefreshToken')
     }
   },
-
   watch: {
+    /**
+     * Watch the auth object returned from Spotify.
+     */
     auth: function(oldVal, newVal) {
       if (newVal.status === false) {
         clearInterval(this.pollPlaying)
       }
     },
 
+    /**
+     * Watch the returned track object.
+     */
     playerResponse: function() {
       this.handleNowPlaying()
     },
 
+    /**
+     * Watch our locally stored track data.
+     */
     playerData: function() {
       this.$emit('spotifyTrackUpdated', this.playerData)
+
       this.$nextTick(() => {
         this.getAlbumColours()
       })
