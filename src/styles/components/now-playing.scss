@@ -39,7 +39,7 @@
   &__track {
     font-weight: var(--font-weight-heading);
     font-size: 86px;
-    line-height: 1; /* Current line-height */
+    // line-height: 1; /* Current line-height */
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
@@ -47,8 +47,8 @@
     text-overflow: ellipsis;
     max-height: calc(86px * 3 + 15px); /* Increased max-height by 10px */
     word-wrap: break-word;
-    padding-top: 0;
-    margin-top: -2px;
+    // padding-top: 0;
+    margin-top: -10px;
     padding-bottom: 1px; /* Additional bottom padding */
     box-sizing: border-box; /* Ensure padding is included in height */
   }
@@ -57,7 +57,7 @@
   &__artists {
     opacity: 0.85;
     font-size: 82px;
-    line-height: 1; /* Increased line-height to prevent cutoff of descenders */
+    // line-height: 1; /* Increased line-height to prevent cutoff of descenders */
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
