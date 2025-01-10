@@ -39,34 +39,38 @@
   &__track {
     font-weight: var(--font-weight-heading);
     font-size: 82px;
-    line-height: 1; /* Current line-height */
+    line-height: 1; 
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-height: calc(82px * 3 + 10px); /* Increased max-height by 10px */
+    max-height: calc(82px * 3 + 10px); 
     word-wrap: break-word;
-    padding-top: 2px; /* Additional top padding */
-    padding-bottom: 3px; /* Additional bottom padding */
-    box-sizing: border-box; /* Ensure padding is included in height */
+    padding-top: 2px;
+    padding-bottom: 3px;
+    box-sizing: border-box;
   }
 
-  /* Truncate long artist names with ellipses once container is filled (3 lines) */
+  /* Truncate long artist names with ellipses once container is filled (3 lines).
+     - Slightly increase line-height to prevent descenders (g/j) from being cut.
+     - Reduce bottom padding so it doesn't overflow or cause scrollbars. */
   &__artists {
     opacity: 0.85;
     font-size: 78px;
-    line-height: 1; /* Current line-height */
+    line-height: 1.1; /* Increased for descenders */
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
     overflow: hidden;
     text-overflow: ellipsis;
+    /* Slightly increase max-height so three lines + descenders fit,
+       but shrink bottom padding to avoid overflow. */
     max-height: calc(78px * 3 + 5px);
     word-wrap: break-word;
-    padding-top: 3px; /* Additional top padding */
-    padding-bottom: 3px; /* Additional bottom padding */
-    box-sizing: border-box; /* Ensure padding is included in height */
+    padding-top: 3px;
+    padding-bottom: 0px; /* Reduced bottom padding */
+    box-sizing: border-box;
   }
 
   &--active {
