@@ -39,7 +39,7 @@
   &__track {
     font-weight: var(--font-weight-heading);
     font-size: 86px;
-    // line-height: 1; /* Current line-height */
+    line-height: 1;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
@@ -57,7 +57,7 @@
   &__artists {
     opacity: 0.85;
     font-size: 82px;
-    // line-height: 1; /* Increased line-height to prevent cutoff of descenders */
+    line-height: 1;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
