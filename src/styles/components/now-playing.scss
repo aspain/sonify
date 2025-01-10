@@ -39,15 +39,15 @@
   &__track {
     font-weight: var(--font-weight-heading);
     font-size: 82px;
-    line-height: 0.9; /* Current line-height */
+    line-height: 1; /* Current line-height */
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-height: calc(82px * 3 + 20px); /* Increased max-height by 10px */
+    max-height: calc(82px * 3 + 10px); /* Increased max-height by 10px */
     word-wrap: break-word;
-    padding-top: 5px; /* Additional top padding */
+    padding-top: 1px; /* Additional top padding */
     padding-bottom: 5px; /* Additional bottom padding */
     box-sizing: border-box; /* Ensure padding is included in height */
   }
@@ -56,7 +56,7 @@
   &__artists {
     opacity: 0.85;
     font-size: 78px;
-    line-height: 0.9; /* Current line-height */
+    line-height: 1; /* Current line-height */
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
@@ -65,7 +65,7 @@
     max-height: calc(78px * 3 + 10px); /* Increased max-height by 10px */
     word-wrap: break-word;
     padding-top: 5px; /* Additional top padding */
-    padding-bottom: 5px; /* Additional bottom padding */
+    padding-bottom: 1px; /* Additional bottom padding */
     box-sizing: border-box; /* Ensure padding is included in height */
   }
 
