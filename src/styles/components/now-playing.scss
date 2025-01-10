@@ -47,8 +47,8 @@
     text-overflow: ellipsis;
     max-height: calc(82px * 3 + 10px); /* Increased max-height by 10px */
     word-wrap: break-word;
-    padding-top: 1px; /* Additional top padding */
-    padding-bottom: 5px; /* Additional bottom padding */
+    padding-top: 2px; /* Additional top padding */
+    padding-bottom: 3px; /* Additional bottom padding */
     box-sizing: border-box; /* Ensure padding is included in height */
   }
 
@@ -64,8 +64,8 @@
     text-overflow: ellipsis;
     max-height: calc(78px * 3 + 10px); /* Increased max-height by 10px */
     word-wrap: break-word;
-    padding-top: 5px; /* Additional top padding */
-    padding-bottom: 1px; /* Additional bottom padding */
+    padding-top: 3px; /* Additional top padding */
+    padding-bottom: 3px; /* Additional bottom padding */
     box-sizing: border-box; /* Ensure padding is included in height */
   }
 
