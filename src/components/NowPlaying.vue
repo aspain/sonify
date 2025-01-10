@@ -49,7 +49,6 @@ export default {
   computed: {
     /**
      * Return a comma-separated list of track artists.
-     * @return {String}
      */
     getTrackArtists() {
       return this.player.trackArtists.join(', ')
@@ -82,24 +81,16 @@ export default {
           }
         )
 
-        /**
-         * Fetch error.
-         */
         if (!response.ok) {
           throw new Error(`An error has occured: ${response.status}`)
         }
 
-        /**
-         * Spotify returns a 204 when no current device session is found.
-         */
         if (response.status === 204) {
           data = this.getEmptyPlayer()
           this.playerData = data
-
           this.$nextTick(() => {
             this.$emit('spotifyTrackUpdated', data)
           })
-
           return
         }
 
@@ -107,10 +98,8 @@ export default {
         this.playerResponse = data
       } catch (error) {
         this.handleExpiredToken()
-
         data = this.getEmptyPlayer()
         this.playerData = data
-
         this.$nextTick(() => {
           this.$emit('spotifyTrackUpdated', data)
         })
@@ -119,7 +108,6 @@ export default {
 
     /**
      * Get the Now Playing element class.
-     * @return {String}
      */
     getNowPlayingClass() {
       const playerClass = this.player.playing ? 'active' : 'idle'
@@ -145,7 +133,6 @@ export default {
 
     /**
      * Return a formatted empty object for an idle player.
-     * @return {Object}
      */
     getEmptyPlayer() {
       return {
@@ -175,7 +162,6 @@ export default {
         '--color-text-primary',
         this.colourPalette.text
       )
-
       document.documentElement.style.setProperty(
         '--colour-background-now-playing',
         this.colourPalette.background
@@ -194,25 +180,15 @@ export default {
         return
       }
 
-      /**
-       * Player is active, but user has paused.
-       */
       if (this.playerResponse.is_playing === false) {
         this.playerData = this.getEmptyPlayer()
         return
       }
 
-      /**
-       * The newly fetched track is the same as our stored one,
-       * we don't want to update the DOM yet.
-       */
       if (this.playerResponse.item?.id === this.playerData.trackId) {
         return
       }
 
-      /**
-       * Store the current active track.
-       */
       this.playerData = {
         playing: this.playerResponse.is_playing,
         trackArtists: this.playerResponse.item.artists.map(
@@ -245,7 +221,6 @@ export default {
           if (brightness > threshold) {
             textColor = '#000'
           }
-
           return {
             text: textColor,
             background: bgHex
@@ -283,25 +258,16 @@ export default {
   },
 
   watch: {
-    /**
-     * Watch the auth object returned from Spotify.
-     */
     auth: function(oldVal, newVal) {
       if (newVal.status === false) {
         clearInterval(this.pollPlaying)
       }
     },
 
-    /**
-     * Watch the returned track object.
-     */
     playerResponse: function() {
       this.handleNowPlaying()
     },
 
-    /**
-     * Watch our locally stored track data.
-     */
     playerData: function() {
       this.$emit('spotifyTrackUpdated', this.playerData)
       this.$nextTick(() => {

@@ -35,34 +35,32 @@
     text-align: center;
   }
 
-  /* Truncate long track titles with ellipses once container is filled */
+  /* Truncate long track titles with ellipses once container is filled (3 lines) */
   &__track {
     font-weight: var(--font-weight-heading);
     font-size: 84px;
-    /* Controls multiline overflow/ellipses */
+    line-height: 1; /* Decrease line-height to reduce spacing between lines */
     display: -webkit-box;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3; /* show up to 3 lines, then truncate */
+    -webkit-line-clamp: 3;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-height: calc(84px * 3); /* 3 lines total */
     word-wrap: break-word;
-    max-height: 4.2em; /* roughly 3 lines of 1.4 line-height */
-    line-height: 1.4;
   }
 
-  /* Truncate long artist names with ellipses once container is filled */
+  /* Truncate long artist names with ellipses once container is filled (3 lines) */
   &__artists {
     opacity: 0.85;
     font-size: 80px;
-    /* Controls multiline overflow/ellipses */
+    line-height: 1;
     display: -webkit-box;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2; /* show up to 2 lines, then truncate */
+    -webkit-line-clamp: 3;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-height: calc(80px * 3); /* 3 lines total */
     word-wrap: break-word;
-    max-height: 3.2em; /* roughly 2 lines of 1.6 line-height */
-    line-height: 1.6;
   }
 
   &--active {
