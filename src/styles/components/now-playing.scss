@@ -62,7 +62,7 @@
     -webkit-line-clamp: 3;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-height: calc(78px * 3 + 10px); /* Increased max-height by 10px */
+    max-height: calc(78px * 3 + 5px);
     word-wrap: break-word;
     padding-top: 3px; /* Additional top padding */
     padding-bottom: 3px; /* Additional bottom padding */
