@@ -68,14 +68,14 @@ export default {
         const response = await fetch('http://192.168.4.96:5005/Living Room/state')
         const data = await response.json()
 
-        // 2) Check if "zoneState" === "PLAYING"
-        if (data.zoneState === 'PLAYING') {
+        // 2) Check if "playbackState" === "PLAYING"
+        if (data.playbackState === 'PLAYING') {
           this.playerData.playing = true
           this.playerData.trackTitle = data.currentTrack.title || ''
           this.playerData.trackArtists = [data.currentTrack.artist || '']
           // 3) Build albumArt URL
           this.playerData.trackAlbum.image =
-            `http://192.168.4.96:5005${data.currentTrack.albumArtURI}`
+            `http://192.168.4.96:5005${data.currentTrack.albumArtUri}`
         } else {
           // Not playing
           this.playerData = this.getEmptyPlayer()
