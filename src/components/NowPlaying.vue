@@ -65,7 +65,7 @@ export default {
       try {
         // 1) Could also fetch /zones and find the first active room,
         //    but let's assume you only care about "Living Room."
-        const response = await fetch('http://<pi-IP>:5005/Living Room/state')
+        const response = await fetch('http://192.168.4.96:5005/Living Room/state')
         const data = await response.json()
 
         // 2) Check if "zoneState" === "PLAYING"
@@ -75,7 +75,7 @@ export default {
           this.playerData.trackArtists = [data.currentTrack.artist || '']
           // 3) Build albumArt URL
           this.playerData.trackAlbum.image =
-            `http://<pi-IP>:5005${data.currentTrack.albumArtURI}`
+            `http://192.168.4.96:5005${data.currentTrack.albumArtURI}`
         } else {
           // Not playing
           this.playerData = this.getEmptyPlayer()
