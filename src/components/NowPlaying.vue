@@ -32,15 +32,11 @@ export default {
   name: 'NowPlaying',
 
   props: {
-    auth: props.auth,
-    endpoints: props.endpoints,
     player: props.player
   },
 
   data() {
     return {
-      pollPlaying: '',
-      playerResponse: {},
       playerData: this.getEmptyPlayer(),
       colourPalette: '',
       swatches: []
@@ -66,59 +62,6 @@ export default {
   },
 
   methods: {
-    /**
-     * Make the network request to Spotify to
-     * get the current played track.
-     */
-    async getNowPlaying() {
-      let data = {}
-
-      try {
-        const response = await fetch(
-          `${this.endpoints.base}/${this.endpoints.nowPlaying}`,
-          {
-            headers: {
-              Authorization: `Bearer ${this.auth.accessToken}`
-            }
-          }
-        )
-
-        /**
-         * Fetch error.
-         */
-        if (!response.ok) {
-          throw new Error(`An error has occured: ${response.status}`)
-        }
-
-        /**
-         * Spotify returns a 204 when no current device session is found.
-         * The connection was successful but there's no content to return.
-         */
-        if (response.status === 204) {
-          data = this.getEmptyPlayer()
-          this.playerData = data
-
-          this.$nextTick(() => {
-            this.$emit('spotifyTrackUpdated', data)
-          })
-
-          return
-        }
-
-        data = await response.json()
-        this.playerResponse = data
-      } catch (error) {
-        this.handleExpiredToken()
-
-        data = this.getEmptyPlayer()
-        this.playerData = data
-
-        this.$nextTick(() => {
-          this.$emit('spotifyTrackUpdated', data)
-        })
-      }
-    },
-
     /**
      * Get the Now Playing element class.
      * @return {String}
@@ -166,16 +109,6 @@ export default {
     },
 
     /**
-     * Poll Spotify for data.
-     */
-    setDataInterval() {
-      clearInterval(this.pollPlaying)
-      this.pollPlaying = setInterval(() => {
-        this.getNowPlaying()
-      }, 2500)
-    },
-
-    /**
      * Set the stylings of the app based on received colours.
      */
     setAppColours() {
@@ -188,53 +121,6 @@ export default {
         '--colour-background-now-playing',
         this.colourPalette.background
       )
-    },
-
-    /**
-     * Handle newly updated Spotify Tracks.
-     */
-    handleNowPlaying() {
-      if (
-        this.playerResponse.error?.status === 401 ||
-        this.playerResponse.error?.status === 400
-      ) {
-        this.handleExpiredToken()
-
-        return
-      }
-
-      /**
-       * Player is active, but user has paused.
-       */
-      if (this.playerResponse.is_playing === false) {
-        this.playerData = this.getEmptyPlayer()
-
-        return
-      }
-
-      /**
-       * The newly fetched track is the same as our stored
-       * one, we don't want to update the DOM yet.
-       */
-      if (this.playerResponse.item?.id === this.playerData.trackId) {
-        return
-      }
-
-      /**
-       * Store the current active track.
-       */
-      this.playerData = {
-        playing: this.playerResponse.is_playing,
-        trackArtists: this.playerResponse.item.artists.map(
-          artist => artist.name
-        ),
-        trackTitle: this.playerResponse.item.name,
-        trackId: this.playerResponse.item.id,
-        trackAlbum: {
-          title: this.playerResponse.item.album.name,
-          image: this.playerResponse.item.album.images[0].url
-        }
-      }
     },
 
     /**
@@ -288,38 +174,12 @@ export default {
       // Formula for perceived brightness
       return 0.299 * r + 0.587 * g + 0.114 * b
     },
-
-    /**
-     * Handle an expired access token from Spotify.
-     */
-    handleExpiredToken() {
-      clearInterval(this.pollPlaying)
-      this.$emit('requestRefreshToken')
-    }
   },
   watch: {
-    /**
-     * Watch the auth object returned from Spotify.
-     */
-    auth: function(oldVal, newVal) {
-      if (newVal.status === false) {
-        clearInterval(this.pollPlaying)
-      }
-    },
-
-    /**
-     * Watch the returned track object.
-     */
-    playerResponse: function() {
-      this.handleNowPlaying()
-    },
-
     /**
      * Watch our locally stored track data.
      */
     playerData: function() {
-      this.$emit('spotifyTrackUpdated', this.playerData)
-
       this.$nextTick(() => {
         this.getAlbumColours()
       })
