@@ -1,6 +1,10 @@
 <template>
   <div id="app">
-    <div v-if="player.playing" class="now-playing now-playing--active">
+    <div
+      v-if="player.playing"
+      class="now-playing"
+      :class="getNowPlayingClass()"
+    >
       <div class="now-playing__cover">
         <img
           :src="player.trackAlbum.image"
@@ -9,11 +13,11 @@
         />
       </div>
       <div class="now-playing__details">
-        <h1 class="now-playing__track">{{ player.trackTitle }}</h1>
-        <h2 class="now-playing__artists">{{ getTrackArtists }}</h2>
+        <h1 class="now-playing__track" v-text="player.trackTitle"></h1>
+        <h2 class="now-playing__artists" v-text="getTrackArtists"></h2>
       </div>
     </div>
-    <div v-else class="now-playing now-playing--idle">
+    <div v-else class="now-playing" :class="getNowPlayingClass()">
       <h1 class="now-playing__idle-heading">No music is playing 😔</h1>
     </div>
   </div>
@@ -25,92 +29,80 @@ import * as Vibrant from 'node-vibrant'
 export default {
   name: 'NowPlaying',
 
-  data() {
-    return {
-      pollIntervalId: null,
-      playerData: this.getEmptyPlayer()
+  props: {
+    player: {
+      type: Object,
+      required: true,
+      default: () => ({
+        playing: false,
+        trackAlbum: {},
+        trackArtists: [],
+        trackTitle: ''
+      })
     }
   },
 
   computed: {
     getTrackArtists() {
-      return this.playerData.trackArtists.join(', ')
-    },
-    player() {
-      // This just returns the local data as "player"
-      return this.playerData
+      if (Array.isArray(this.player.trackArtists)) {
+        return this.player.trackArtists.join(', ')
+      }
+      return this.player.trackArtists || ''
     }
   },
 
-  mounted() {
-    this.fetchSonosState() // initial fetch
-    this.pollIntervalId = setInterval(this.fetchSonosState, 2500) // poll every 2.5s
-  },
-
-  beforeDestroy() {
-    clearInterval(this.pollIntervalId)
-  },
-
   methods: {
-    getEmptyPlayer() {
-      return {
-        playing: false,
-        trackTitle: '',
-        trackArtists: [],
-        trackAlbum: { image: '' }
-      }
+    getNowPlayingClass() {
+      return this.player.playing ? 'now-playing--active' : 'now-playing--idle'
     },
 
-    async fetchSonosState() {
-      try {
-        // 1) Could also fetch /zones and find the first active room,
-        //    but let's assume you only care about "Living Room."
-        const response = await fetch('http://192.168.4.96:5005/Living Room/state')
-        const data = await response.json()
-
-        // 2) Check if "playbackState" === "PLAYING"
-        if (data.playbackState === 'PLAYING') {
-          this.playerData.playing = true
-          this.playerData.trackTitle = data.currentTrack.title || ''
-          this.playerData.trackArtists = [data.currentTrack.artist || '']
-          // 3) Build albumArt URL
-          this.playerData.trackAlbum.image =
-            `http://192.168.4.96:5005${data.currentTrack.albumArtUri}`
-        } else {
-          // Not playing
-          this.playerData = this.getEmptyPlayer()
-        }
-
-        // 4) Use Vibrant to set background color
-        if (this.playerData.playing && this.playerData.trackAlbum.image) {
-          this.setAlbumColors(this.playerData.trackAlbum.image)
-        }
-      } catch (err) {
-        console.error(err)
-        this.playerData = this.getEmptyPlayer()
-      }
+    updateColors(imageUrl) {
+      if (!imageUrl) return
+      
+      Vibrant.from(imageUrl)
+        .quality(1)
+        .clearFilters()
+        .getPalette()
+        .then(palette => {
+          const swatches = Object.values(palette).filter(Boolean)
+          if (swatches.length > 0) {
+            const randomSwatch = swatches[Math.floor(Math.random() * swatches.length)]
+            const bgColor = randomSwatch.getHex()
+            const textColor = this.calculateTextColor(bgColor)
+            
+            document.documentElement.style.setProperty(
+              '--color-text-primary', 
+              textColor
+            )
+            document.documentElement.style.setProperty(
+              '--colour-background-now-playing', 
+              bgColor
+            )
+          }
+        })
+        .catch(console.error)
     },
 
-    async setAlbumColors(imageUrl) {
-      try {
-        const palette = await Vibrant.from(imageUrl).getPalette()
-        // pick a random swatch
-        const swatchArray = Object.keys(palette).map(key => palette[key])
-        const chosenSwatch =
-          swatchArray[Math.floor(Math.random() * swatchArray.length)]
-        const bgHex = chosenSwatch.getHex()
-        const textColor = chosenSwatch.getTitleTextColor()
+    calculateTextColor(bgHex) {
+      const c = bgHex.replace('#', '')
+      const rgb = parseInt(c, 16)
+      const r = (rgb >> 16) & 0xff
+      const g = (rgb >> 8) & 0xff
+      const b = (rgb >> 0) & 0xff
+      const brightness = 0.299 * r + 0.587 * g + 0.114 * b
+      return brightness > 150 ? '#000' : '#fff'
+    }
+  },
 
-        document.documentElement.style.setProperty('--color-text-primary', textColor)
-        document.documentElement.style.setProperty('--colour-background-now-playing', bgHex)
-      } catch (error) {
-        console.error('Vibrant error:', error)
+  watch: {
+    'player.trackAlbum.image': {
+      immediate: true,
+      handler(newVal) {
+        if (newVal) this.updateColors(newVal)
       }
     }
   }
 }
 </script>
 
-<style scoped>
-/* Keep or modify your existing styles. */
-</style>
+<style src="@/styles/components/now-playing.scss" lang="scss" scoped></style>
