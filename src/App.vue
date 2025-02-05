@@ -33,8 +33,8 @@ export default {
         try {
           const response = await fetch('http://localhost:5005/zones')
           const zones = await response.json()
-          
-          const activeZone = zones.find(zone => 
+
+          const activeZone = zones.find(zone =>
             zone.members.some(member => member.state.playbackState === 'PLAYING')
           )
 
@@ -42,21 +42,40 @@ export default {
             const coordinator = activeZone.members.find(m => m.coordinator)
             const state = coordinator.state.currentTrack
 
-            // If albumArtUri is a relative URL (from /getaa), use it; otherwise, use the provided full URL.
             let imageUrl = ''
-            if (state.albumArtUri && state.albumArtUri.startsWith('/getaa')) {
-              imageUrl = `http://localhost:5005${state.albumArtUri}`
-            } else {
-              imageUrl = state.albumArtUri || state.absoluteAlbumArtUri || ''
+
+            // Use the absolute URL if it doesn’t point to a mosaic image
+            if (state.absoluteAlbumArtUri && state.absoluteAlbumArtUri.indexOf('mosaic.scdn.co') === -1) {
+              imageUrl = state.absoluteAlbumArtUri
+            } else if (state.albumArtUri) {
+              // Build the URL if albumArtUri is relative
+              imageUrl = state.albumArtUri.startsWith('http')
+                ? state.albumArtUri
+                : `http://localhost:5005${state.albumArtUri}`
+            }
+
+            // If the imageUrl is still the mosaic image, try to fetch proper album art from Spotify
+            if (imageUrl.indexOf('mosaic.scdn.co') !== -1 && state.trackUri) {
+              try {
+                const spotifyResponse = await fetch(
+                  `http://localhost:5006/spotifyalbumart?uri=${encodeURIComponent(state.trackUri)}`
+                )
+                if (spotifyResponse.ok) {
+                  const data = await spotifyResponse.json()
+                  if (data.albumArtUrl) {
+                    imageUrl = data.albumArtUrl
+                  }
+                }
+              } catch (err) {
+                console.error('Spotify album art fetch error:', err)
+              }
             }
 
             this.player = {
               playing: true,
               trackTitle: state.title,
               trackArtists: [state.artist],
-              trackAlbum: {
-                image: imageUrl
-              }
+              trackAlbum: { image: imageUrl }
             }
           } else {
             this.player.playing = false
@@ -65,7 +84,6 @@ export default {
           console.error('Sonos API error:', error)
         }
       }
-
       // Initial check and then every 2 seconds
       checkState()
       setInterval(checkState, 2000)
