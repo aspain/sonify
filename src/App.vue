@@ -35,22 +35,27 @@ export default {
           const zones = await response.json()
           
           const activeZone = zones.find(zone => 
-            zone.members.some(member => 
-              member.state.playbackState === 'PLAYING'
-            )
+            zone.members.some(member => member.state.playbackState === 'PLAYING')
           )
 
           if (activeZone) {
             const coordinator = activeZone.members.find(m => m.coordinator)
             const state = coordinator.state.currentTrack
-            
+
+            // If albumArtUri is a relative URL (from /getaa), use it; otherwise, use the provided full URL.
+            let imageUrl = ''
+            if (state.albumArtUri && state.albumArtUri.startsWith('/getaa')) {
+              imageUrl = `http://localhost:5005${state.albumArtUri}`
+            } else {
+              imageUrl = state.albumArtUri || state.absoluteAlbumArtUri || ''
+            }
+
             this.player = {
               playing: true,
               trackTitle: state.title,
-              trackArtists: [state.artist], // Convert to array
+              trackArtists: [state.artist],
               trackAlbum: {
-                image: state.absoluteAlbumArtUri || 
-                      `http://localhost:5005${state.albumArtUri}`
+                image: imageUrl
               }
             }
           } else {
@@ -61,7 +66,7 @@ export default {
         }
       }
 
-      // Initial check and every 2 seconds
+      // Initial check and then every 2 seconds
       checkState()
       setInterval(checkState, 2000)
     }
