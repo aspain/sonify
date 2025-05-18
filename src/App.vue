@@ -10,19 +10,25 @@ import NowPlaying from '@/components/NowPlaying'
 export default {
   name: 'App',
   components: { NowPlaying },
+
   data() {
     return {
       player: {
         playing: false,
         trackArtists: [],
         trackTitle: '',
-        trackAlbum: { image: '' }
+        trackAlbum: {
+          image: '',
+          paletteSrc: ''
+        }
       }
     }
   },
+
   mounted() {
     this.pollSonosState()
   },
+
   methods: {
     async pollSonosState() {
       const checkState = async () => {
@@ -30,50 +36,50 @@ export default {
           const response = await fetch('http://localhost:5005/zones')
           const zones = await response.json()
 
-          // Find any zone with a playing member
+          // Find a zone that is currently playing
           const activeZone = zones.find(zone =>
-            zone.members.some(member => member.state.playbackState === 'PLAYING')
+            zone.members.some(m => m.state.playbackState === 'PLAYING')
           )
 
           if (activeZone) {
             const coordinator = activeZone.members.find(m => m.coordinator)
             const state = coordinator.state.currentTrack
 
-            // Try to get the Sonos IP (either directly or from the next track?s absolute URL)
-            let sonosIP = 'localhost'
-            if (coordinator.ip) {
-              sonosIP = coordinator.ip
-            } else if (
-              coordinator.state.nextTrack &&
-              coordinator.state.nextTrack.absoluteAlbumArtUri
-            ) {
+            /* ── Figure out the speaker’s IP (for Sonos-hosted artwork) ── */
+            let sonosIP = coordinator.ip || 'localhost'
+            if (!coordinator.ip &&
+                coordinator.state.nextTrack &&
+                coordinator.state.nextTrack.absoluteAlbumArtUri) {
               try {
-                const url = new URL(coordinator.state.nextTrack.absoluteAlbumArtUri)
-                sonosIP = url.hostname
+                const u = new URL(coordinator.state.nextTrack.absoluteAlbumArtUri)
+                sonosIP = u.hostname
               } catch (err) {
-                console.error('Error parsing Sonos IP:', err)
+                console.error('Sonos IP parse error:', err)
               }
             }
 
-            // Determine the correct album art URL:
-            // ? If albumArtUri is a full URL (Spotify Connect), use it directly.
-            // ? Otherwise (Sonos app), prefix with your Sonos IP and port 1400.
+            /* ── Build the artwork URL used in the <img> element ── */
             let image = ''
             if (state.albumArtUri) {
-              if (state.albumArtUri.startsWith('http')) {
-                image = state.albumArtUri
-              } else {
-                image = `http://${sonosIP}:1400${state.albumArtUri}`
-              }
+              image = state.albumArtUri.startsWith('http')
+                ? state.albumArtUri
+                : `http://${sonosIP}:1400${state.albumArtUri}`
             } else if (state.absoluteAlbumArtUri) {
               image = state.absoluteAlbumArtUri
             }
 
+            /* ── NEW: a CORS-friendly copy just for node-vibrant ── */
+            const paletteSrc =
+              image.includes(':1400/') || image.includes(`://${sonosIP}:1400`)
+                ? `http://localhost:5005/album-art?url=${encodeURIComponent(image)}`
+                : image
+
+            /* ── Update the reactive player object ── */
             this.player = {
               playing: true,
               trackTitle: state.title,
               trackArtists: [state.artist],
-              trackAlbum: { image }
+              trackAlbum: { image, paletteSrc }
             }
           } else {
             this.player.playing = false
