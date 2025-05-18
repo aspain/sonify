@@ -39,7 +39,7 @@ export default {
             const coordinator = activeZone.members.find(m => m.coordinator)
             const state = coordinator.state.currentTrack
 
-            // Try to get the Sonos IP (either directly or from the next track’s absolute URL)
+            // Try to get the Sonos IP (either directly or from the next track?s absolute URL)
             let sonosIP = 'localhost'
             if (coordinator.ip) {
               sonosIP = coordinator.ip
@@ -56,8 +56,8 @@ export default {
             }
 
             // Determine the correct album art URL:
-            // – If albumArtUri is a full URL (Spotify Connect), use it directly.
-            // – Otherwise (Sonos app), prefix with your Sonos IP and port 1400.
+            // ? If albumArtUri is a full URL (Spotify Connect), use it directly.
+            // ? Otherwise (Sonos app), prefix with your Sonos IP and port 1400.
             let image = ''
             if (state.albumArtUri) {
               if (state.albumArtUri.startsWith('http')) {

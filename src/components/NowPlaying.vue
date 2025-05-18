@@ -9,7 +9,6 @@
         <img
           :src="player.trackAlbum.image"
           :alt="player.trackTitle"
-          crossorigin="anonymous"
           class="now-playing__image"
         />
       </div>
@@ -19,7 +18,7 @@
       </div>
     </div>
     <div v-else class="now-playing" :class="getNowPlayingClass()">
-      <h1 class="now-playing__idle-heading">No music is playing 😔</h1>
+      <h1 class="now-playing__idle-heading">No music is playing ?</h1>
     </div>
   </div>
 </template>
@@ -60,7 +59,7 @@ export default {
     updateColors(imageUrl) {
       if (!imageUrl) return
       
-      Vibrant.from(imageUrl, { crossOrigin: 'anonymous' })
+      Vibrant.from(imageUrl)
         .quality(1)
         .clearFilters()
         .getPalette()
