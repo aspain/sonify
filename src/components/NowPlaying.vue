@@ -6,11 +6,13 @@
       :class="getNowPlayingClass()"
     >
       <div class="now-playing__cover">
-        <img
-          :src="player.trackAlbum.image"
-          :alt="player.trackTitle"
-          class="now-playing__image"
-        />
+      <img
+        :key="player.trackAlbum.image"     <!-- forces Vue to re-render on each track -->
+        :src="player.trackAlbum.image"
+        crossorigin="anonymous"            <!-- lets the browser request CORS if available -->
+        :alt="player.trackTitle"
+        class="now-playing__image"
+      />
       </div>
       <div class="now-playing__details">
         <h1 class="now-playing__track" v-text="player.trackTitle"></h1>
@@ -56,31 +58,46 @@ export default {
       return this.player.playing ? 'now-playing--active' : 'now-playing--idle'
     },
 
-    updateColors(imageUrl) {
+    async updateColors (imageUrl) {
       if (!imageUrl) return
-      
-      Vibrant.from(imageUrl)
-        .quality(1)
-        .clearFilters()
-        .getPalette()
-        .then(palette => {
-          const swatches = Object.values(palette).filter(Boolean)
-          if (swatches.length > 0) {
-            const randomSwatch = swatches[Math.floor(Math.random() * swatches.length)]
-            const bgColor = randomSwatch.getHex()
-            const textColor = this.calculateTextColor(bgColor)
-            
-            document.documentElement.style.setProperty(
-              '--color-text-primary', 
-              textColor
-            )
-            document.documentElement.style.setProperty(
-              '--colour-background-now-playing', 
-              bgColor
-            )
-          }
-        })
-        .catch(console.error)
+
+      // If the artwork comes from the Sonos speaker (:1400) it lacks CORS headers.
+      // We fetch it ourselves, turn it into a blob URL (same-origin) and hand that to Vibrant.
+      let sourceForVibrant = imageUrl
+
+      if (imageUrl.includes(':1400/')) {
+        try {
+          const res      = await fetch(imageUrl)
+          const blob     = await res.blob()
+          sourceForVibrant = URL.createObjectURL(blob)
+        } catch (e) {
+          console.error('Could not fetch local Sonos artwork:', e)
+        }
+      }
+
+      try {
+        const palette = await Vibrant.from(sourceForVibrant)
+                                    .quality(1)
+                                    .clearFilters()
+                                    .getPalette()
+
+        const swatches = Object.values(palette).filter(Boolean)
+        if (!swatches.length) return
+
+        const swatch     = swatches[Math.floor(Math.random() * swatches.length)]
+        const bgColor    = swatch.getHex()
+        const textColor  = this.calculateTextColor(bgColor)
+
+        document.documentElement.style.setProperty('--color-text-primary', textColor)
+        document.documentElement.style.setProperty('--colour-background-now-playing', bgColor)
+      } catch (err) {
+        console.error('Vibrant failed:', err)
+      } finally {
+        // Clean up any blob URL we created
+        if (sourceForVibrant.startsWith('blob:')) {
+          URL.revokeObjectURL(sourceForVibrant)
+        }
+      }
     },
 
     calculateTextColor(bgHex) {
