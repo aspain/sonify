@@ -95,10 +95,13 @@ export default {
   },
 
   watch: {
-    'player.trackAlbum.image': {
+    player: {
+      deep: true,
       immediate: true,
-      handler(newVal) {
-        if (newVal) this.updateColors(newVal)
+      handler(newPlayer) {
+        if (newPlayer.playing && newPlayer.trackAlbum.image) {
+          this.updateColors(newPlayer.trackAlbum.image)
+        }
       }
     }
   }
