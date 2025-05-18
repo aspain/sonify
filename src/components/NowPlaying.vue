@@ -7,9 +7,9 @@
     >
       <div class="now-playing__cover">
       <img
-        :key="player.trackAlbum.image"     <!-- forces Vue to re-render on each track -->
+        :key="player.trackAlbum.image"
         :src="player.trackAlbum.image"
-        crossorigin="anonymous"            <!-- lets the browser request CORS if available -->
+        crossorigin="anonymous"
         :alt="player.trackTitle"
         class="now-playing__image"
       />
