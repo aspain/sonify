@@ -9,7 +9,7 @@
         <img
           :key="player.trackAlbum.image"
           :src="player.trackAlbum.image"
-          crossorigin="anonymous"
+          :crossorigin="player.trackAlbum.image.includes(':1400/') ? null : 'anonymous'"
           :alt="player.trackTitle"
           class="now-playing__image"
         />
