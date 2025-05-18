@@ -110,10 +110,12 @@ export default {
   },
 
   watch: {
-    'player.trackAlbum.image': {
+    player: {
+      deep: true,
       immediate: true,
-      handler(newVal) {
-        if (newVal) this.updateColors(newVal)
+      handler (val) {
+        const img = val?.trackAlbum?.image
+        if (img) this.updateColors(img)
       }
     }
   }
