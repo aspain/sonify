@@ -108,13 +108,17 @@ export default {
       return brightness > 150 ? '#000' : '#fff'
     }
   },
-
   watch: {
     player: {
       deep: true,
       immediate: true,
       handler (val) {
-        const img = val?.trackAlbum?.image
+        // avoid optional-chaining so the older Babel preset is happy
+        const img =
+          val &&
+          val.trackAlbum &&
+          val.trackAlbum.image
+
         if (img) this.updateColors(img)
       }
     }
