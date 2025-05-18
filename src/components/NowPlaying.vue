@@ -9,6 +9,7 @@
         <img
           :src="player.trackAlbum.image"
           :alt="player.trackTitle"
+          crossorigin="anonymous"
           class="now-playing__image"
         />
       </div>
