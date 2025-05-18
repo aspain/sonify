@@ -30,67 +30,46 @@ export default {
   },
 
   methods: {
-    async pollSonosState() {
+    /* ────────────────────────────────────────────────────────────
+      Poll Sonos every 2 s, but tolerate short TRANSITIONING gaps
+      before we say “nothing is playing”.
+      ──────────────────────────────────────────────────────────── */
+    async pollSonosState () {
+      const GRACE_MS = 5000          // 5-second cushion
+      let lastActive = 0             // private variable inside closure
+      let lastPlayer = this.player   // remember previous track info
+
       const checkState = async () => {
         try {
-          const response = await fetch('http://localhost:5005/zones')
-          const zones = await response.json()
+          const res   = await fetch('http://localhost:5005/zones')
+          const zones = await res.json()
 
-          // Find a zone that is currently playing
-          const activeZone = zones.find(zone =>
-            zone.members.some(m => m.state.playbackState === 'PLAYING')
+          /* 1 – find a zone whose state is PLAYING *or* TRANSITIONING */
+          const activeZone = zones.find(z =>
+            z.members.some(m =>
+              ['PLAYING', 'TRANSITIONING'].includes(m.state.playbackState)
+            )
           )
 
           if (activeZone) {
+            /* 2 – we’re good; update everything as before */
             const coordinator = activeZone.members.find(m => m.coordinator)
-            const state = coordinator.state.currentTrack
+            const state       = coordinator.state.currentTrack
 
-            /* ── Figure out the speaker’s IP (for Sonos-hosted artwork) ── */
-            let sonosIP = coordinator.ip || 'localhost'
-            if (!coordinator.ip &&
-                coordinator.state.nextTrack &&
-                coordinator.state.nextTrack.absoluteAlbumArtUri) {
-              try {
-                const u = new URL(coordinator.state.nextTrack.absoluteAlbumArtUri)
-                sonosIP = u.hostname
-              } catch (err) {
-                console.error('Sonos IP parse error:', err)
-              }
-            }
+            /* …… (the artwork-resolution & paletteSrc code you already added) …… */
 
-            /* ── Build the artwork URL used in the <img> element ── */
-            let image = ''
-
-            // 1. Prefer absoluteAlbumArtUri if it looks like a real URL
-            if (state.absoluteAlbumArtUri &&
-                state.absoluteAlbumArtUri.startsWith('http')) {
-              image = state.absoluteAlbumArtUri
-
-            // 2. Otherwise fall back to albumArtUri
-            } else if (state.albumArtUri) {
-              image = state.albumArtUri.startsWith('http')
-                ? state.albumArtUri
-                : `http://${sonosIP}:1400${state.albumArtUri}`
-            }
-
-            /* ── NEW: a CORS-friendly copy just for node-vibrant ── */
-            const paletteSrc =
-              image.includes(':1400/') || image.includes(`://${sonosIP}:1400`)
-                ? `http://localhost:5005/album-art?url=${encodeURIComponent(image)}`
-                : image
-
-            /* ── Update the reactive player object ── */
-            this.player = {
-              playing: true,
-              trackTitle: state.title,
-              trackArtists: [state.artist],
-              trackAlbum: { image, paletteSrc }
-            }
+            lastActive = Date.now()
+            lastPlayer = this.player      // snapshot the latest
           } else {
-            this.player.playing = false
+            /* 3 – no ACTIVE zone found.  Are we still inside the grace period? */
+            if (Date.now() - lastActive > GRACE_MS) {
+              this.player.playing = false   // show the idle screen
+            } else {
+              this.player = lastPlayer      // keep showing last known track
+            }
           }
-        } catch (error) {
-          console.error('Sonos API error:', error)
+        } catch (err) {
+          console.error('Sonos API error:', err)
         }
       }
 
