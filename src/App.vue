@@ -63,7 +63,7 @@ export default {
               if (state.albumArtUri.startsWith('http')) {
                 image = state.albumArtUri
               } else {
-                image = `http://localhost:5005${state.albumArtUri}`
+                image = `http://${sonosIP}:1400${state.albumArtUri}`
               }
             } else if (state.absoluteAlbumArtUri) {
               image = state.absoluteAlbumArtUri

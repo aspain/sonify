@@ -59,7 +59,7 @@ export default {
     updateColors(imageUrl) {
       if (!imageUrl) return
       
-      Vibrant.from(imageUrl)
+      Vibrant.from(imageUrl, { crossOrigin: 'anonymous' })
         .quality(1)
         .clearFilters()
         .getPalette()
@@ -95,13 +95,10 @@ export default {
   },
 
   watch: {
-    player: {
-      deep: true,
+    'player.trackAlbum.image': {
       immediate: true,
-      handler(newPlayer) {
-        if (newPlayer.playing && newPlayer.trackAlbum.image) {
-          this.updateColors(newPlayer.trackAlbum.image)
-        }
+      handler(newVal) {
+        if (newVal) this.updateColors(newVal)
       }
     }
   }
