@@ -7,9 +7,7 @@
     >
       <div class="now-playing__cover">
         <img
-          :key="player.trackAlbum.image"
           :src="player.trackAlbum.image"
-          :crossorigin="player.trackAlbum.image.includes(':1400/') ? null : 'anonymous'"
           :alt="player.trackTitle"
           class="now-playing__image"
         />
@@ -57,47 +55,34 @@ export default {
     getNowPlayingClass() {
       return this.player.playing ? 'now-playing--active' : 'now-playing--idle'
     },
-    async updateColors (imageUrl) {
+
+    updateColors(imageUrl) {
       if (!imageUrl) return
 
-      // If the artwork comes from the Sonos speaker (:1400) it lacks CORS headers.
-      // We fetch it ourselves, turn it into a blob URL (same-origin) and hand that to Vibrant.
-      let sourceForVibrant = imageUrl
+      Vibrant.from(imageUrl)
+        .quality(1)
+        .clearFilters()
+        .getPalette()
+        .then(palette => {
+          const swatches = Object.values(palette).filter(Boolean)
+          if (swatches.length > 0) {
+            const randomSwatch = swatches[Math.floor(Math.random() * swatches.length)]
+            const bgColor = randomSwatch.getHex()
+            const textColor = this.calculateTextColor(bgColor)
 
-      if (imageUrl.includes(':1400/')) {
-        try {
-          const res      = await fetch(imageUrl)
-          const blob     = await res.blob()
-          sourceForVibrant = URL.createObjectURL(blob)
-        } catch (e) {
-          console.error('Could not fetch local Sonos artwork:', e)
-        }
-      }
-
-      try {
-        const palette = await Vibrant.from(sourceForVibrant)
-                                    .quality(1)
-                                    .clearFilters()
-                                    .getPalette()
-
-        const swatches = Object.values(palette).filter(Boolean)
-        if (!swatches.length) return
-
-        const swatch     = swatches[Math.floor(Math.random() * swatches.length)]
-        const bgColor    = swatch.getHex()
-        const textColor  = this.calculateTextColor(bgColor)
-
-        document.documentElement.style.setProperty('--color-text-primary', textColor)
-        document.documentElement.style.setProperty('--colour-background-now-playing', bgColor)
-      } catch (err) {
-        console.error('Vibrant failed:', err)
-      } finally {
-        // Clean up any blob URL we created
-        if (sourceForVibrant.startsWith('blob:')) {
-          URL.revokeObjectURL(sourceForVibrant)
-        }
-      }
+            document.documentElement.style.setProperty(
+              '--color-text-primary',
+              textColor
+            )
+            document.documentElement.style.setProperty(
+              '--colour-background-now-playing',
+              bgColor
+            )
+          }
+        })
+        .catch(console.error)
     },
+
     calculateTextColor(bgHex) {
       const c = bgHex.replace('#', '')
       const rgb = parseInt(c, 16)
@@ -108,18 +93,13 @@ export default {
       return brightness > 150 ? '#000' : '#fff'
     }
   },
-  watch: {
-    player: {
-      deep: true,
-      immediate: true,
-      handler (val) {
-        // avoid optional-chaining so the older Babel preset is happy
-        const img =
-          val &&
-          val.trackAlbum &&
-          val.trackAlbum.image
 
-        if (img) this.updateColors(img)
+  watch: {
+    /* NEW — pass the proxied URL to Vibrant so CORS never blocks us */
+    'player.trackAlbum.paletteSrc': {
+      immediate: true,
+      handler(newVal) {
+        if (newVal) this.updateColors(newVal)
       }
     }
   }
