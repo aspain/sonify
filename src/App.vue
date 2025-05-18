@@ -60,12 +60,17 @@ export default {
 
             /* ── Build the artwork URL used in the <img> element ── */
             let image = ''
-            if (state.albumArtUri) {
+
+            // 1. Prefer absoluteAlbumArtUri if it looks like a real URL
+            if (state.absoluteAlbumArtUri &&
+                state.absoluteAlbumArtUri.startsWith('http')) {
+              image = state.absoluteAlbumArtUri
+
+            // 2. Otherwise fall back to albumArtUri
+            } else if (state.albumArtUri) {
               image = state.albumArtUri.startsWith('http')
                 ? state.albumArtUri
                 : `http://${sonosIP}:1400${state.albumArtUri}`
-            } else if (state.absoluteAlbumArtUri) {
-              image = state.absoluteAlbumArtUri
             }
 
             /* ── NEW: a CORS-friendly copy just for node-vibrant ── */
