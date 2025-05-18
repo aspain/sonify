@@ -71,11 +71,22 @@ export default {
               }
             }
 
-            /* Build the <img> artwork URL */
+            /* ── Build the <img> artwork URL ───────────────────────────────── */
             let image = '';
-            if (trackState.absoluteAlbumArtUri && trackState.absoluteAlbumArtUri.startsWith('http')) {
+
+            const hasProg = trackState.albumArtUri
+              ? trackState.albumArtUri.includes('x-sonosprog-spotify')
+              : false;
+
+            if (
+              (hasProg || !trackState.albumArtUri) &&
+              trackState.absoluteAlbumArtUri &&
+              trackState.absoluteAlbumArtUri.startsWith('http')
+            ) {
+              // artist-radio or albumArtUri missing → use absoluteAlbumArtUri
               image = trackState.absoluteAlbumArtUri;
             } else if (trackState.albumArtUri) {
+              // normal playlist / Spotify Connect → use albumArtUri
               image = trackState.albumArtUri.startsWith('http')
                 ? trackState.albumArtUri
                 : `http://${sonosIP}:1400${trackState.albumArtUri}`;
