@@ -6,13 +6,13 @@
       :class="getNowPlayingClass()"
     >
       <div class="now-playing__cover">
-      <img
-        :key="player.trackAlbum.image"
-        :src="player.trackAlbum.image"
-        crossorigin="anonymous"
-        :alt="player.trackTitle"
-        class="now-playing__image"
-      />
+        <img
+          :key="player.trackAlbum.image"
+          :src="player.trackAlbum.image"
+          crossorigin="anonymous"
+          :alt="player.trackTitle"
+          class="now-playing__image"
+        />
       </div>
       <div class="now-playing__details">
         <h1 class="now-playing__track" v-text="player.trackTitle"></h1>
@@ -20,7 +20,7 @@
       </div>
     </div>
     <div v-else class="now-playing" :class="getNowPlayingClass()">
-      <h1 class="now-playing__idle-heading">No music is playing ?</h1>
+      <h1 class="now-playing__idle-heading">No music is playing 😔</h1>
     </div>
   </div>
 </template>
@@ -57,7 +57,6 @@ export default {
     getNowPlayingClass() {
       return this.player.playing ? 'now-playing--active' : 'now-playing--idle'
     },
-
     async updateColors (imageUrl) {
       if (!imageUrl) return
 
@@ -99,7 +98,6 @@ export default {
         }
       }
     },
-
     calculateTextColor(bgHex) {
       const c = bgHex.replace('#', '')
       const rgb = parseInt(c, 16)
