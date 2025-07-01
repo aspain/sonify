@@ -59,14 +59,18 @@ export default {
             /* ── Discover the speaker’s IP ─────────────────────────────── */
             let sonosIP = coordinator.ip || ''
 
-            // ②  pick any other member that *does* have an IP
+            // ② pick any other member that *does* have an IP
             if (!sonosIP) {
               const m = activeZone.members.find(m => m.ip)
               if (m) sonosIP = m.ip
             }
 
-            // ③  fall back to host name in absoluteAlbumArtUri (if present)
-            if (!sonosIP && coordinator.state.nextTrack?.absoluteAlbumArtUri) {
+            // ③ fall back to host name in absoluteAlbumArtUri (if present)
+            if (
+              !sonosIP &&
+              coordinator.state.nextTrack &&
+              coordinator.state.nextTrack.absoluteAlbumArtUri
+            ) {
               try {
                 sonosIP = new URL(
                   coordinator.state.nextTrack.absoluteAlbumArtUri
@@ -83,7 +87,8 @@ export default {
 
             if (
               (hasProg || !trackState.albumArtUri) &&
-              trackState.absoluteAlbumArtUri?.startsWith('http')
+              trackState.absoluteAlbumArtUri &&
+              trackState.absoluteAlbumArtUri.startsWith('http')
             ) {
               // artist-radio or albumArtUri missing → use absoluteAlbumArtUri
               image = trackState.absoluteAlbumArtUri
@@ -94,7 +99,10 @@ export default {
               } else if (sonosIP) {
                 // relative path hosted on the speaker
                 image = `http://${sonosIP}:1400${trackState.albumArtUri}`
-              } else if (trackState.absoluteAlbumArtUri?.startsWith('http')) {
+              } else if (
+                trackState.absoluteAlbumArtUri &&
+                trackState.absoluteAlbumArtUri.startsWith('http')
+              ) {
                 // last-resort fallback – still shows artwork
                 image = trackState.absoluteAlbumArtUri
               }
