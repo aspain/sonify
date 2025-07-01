@@ -94,8 +94,12 @@ export default {
               ? trackState.albumArtUri.includes('x-sonosprog-spotify')
               : false;
 
+            const isSonosHttp = trackState.albumArtUri
+              ? trackState.albumArtUri.includes('x-sonos-http')
+              : false;
+
             if (
-              (hasProg || !trackState.albumArtUri) &&
+              (hasProg || isSonosHttp || !trackState.albumArtUri) &&
               trackState.absoluteAlbumArtUri &&
               trackState.absoluteAlbumArtUri.startsWith('http')
             ) {
