@@ -46,10 +46,14 @@ export default {
           const zones = await res.json();
 
           /* 1 ─ Find a zone that is PLAYING or TRANSITIONING */
+          const TARGET_ROOM = 'Living Room';
+
           const activeZone = zones.find(zone =>
-            zone.members.some(m =>
-              ['PLAYING', 'TRANSITIONING'].includes(m.state.playbackState)
-            )
+            zone.coordinator.roomName === TARGET_ROOM
+            && zone.members.some(m =>
+                ['PLAYING', 'TRANSITIONING']
+                  .includes(m.state.playbackState)
+              )
           );
 
           if (activeZone) {
