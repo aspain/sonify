@@ -45,14 +45,14 @@ export default {
           const res   = await fetch('http://localhost:5005/zones');
           const zones = await res.json();
 
-          /* 1 ─ Find a zone that is PLAYING or TRANSITIONING */
-          const TARGET_ROOM = 'Living Room';
+          /* 1 ─ Watch whichever zone group Living Room belongs to */
+          const TARGET = 'Living Room';
 
           const activeZone = zones.find(zone =>
-            zone.coordinator.roomName === TARGET_ROOM
+            zone.members.some(m => m.roomName === TARGET)
             && zone.members.some(m =>
-                ['PLAYING', 'TRANSITIONING']
-                  .includes(m.state.playbackState)
+                  ['PLAYING','TRANSITIONING']
+                    .includes(m.state.playbackState)
               )
           );
 
